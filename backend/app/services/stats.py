@@ -10,10 +10,23 @@ from app.config import settings
 from app.models import Client, Delivery, NotificationEvent, RateLimitHit
 
 
+TIMEZONE_ALIASES = {
+    "Asia/Calcutta": "Asia/Kolkata",
+    "Asia/Katmandu": "Asia/Kathmandu",
+    "Asia/Saigon": "Asia/Ho_Chi_Minh",
+    "Asia/Rangoon": "Asia/Yangon",
+    "US/Eastern": "America/New_York",
+    "US/Central": "America/Chicago",
+    "US/Mountain": "America/Denver",
+    "US/Pacific": "America/Los_Angeles",
+}
+
+
 def validate_timezone(tz_name: str) -> zoneinfo.ZoneInfo:
-    """Validates that tz_name is a recognized IANA timezone."""
+    """Validates that tz_name is a recognized IANA timezone, resolving legacy aliases."""
+    normalized = TIMEZONE_ALIASES.get(tz_name, tz_name)
     try:
-        return zoneinfo.ZoneInfo(tz_name)
+        return zoneinfo.ZoneInfo(normalized)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

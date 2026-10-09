@@ -2,7 +2,8 @@
  * Date and time formatting helpers using browser's Intl in local timezone.
  */
 
-export const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+export const userTimezone = detectedTz === 'Asia/Calcutta' ? 'Asia/Kolkata' : detectedTz
 
 export function formatDateTime(isoString) {
   if (!isoString) return '-'
