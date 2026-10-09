@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 1025
     SMTP_FROM: str = "no-reply@notifyhub.local"
 
-    # Mail Provider Configuration (Stage 2)
+    # Mail Provider Configuration
     MAIL_PROVIDER: str = "smtp"
     SENDGRID_API_KEY: Optional[str] = None
     FROM_EMAIL: Optional[str] = None

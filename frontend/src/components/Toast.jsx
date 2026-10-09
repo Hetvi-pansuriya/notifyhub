@@ -54,7 +54,7 @@ export function useToast() {
   const context = useContext(ToastContext)
   if (!context) {
     return {
-      addToast: (msg) => console.log(msg),
+      addToast: () => {},
     }
   }
   return context
