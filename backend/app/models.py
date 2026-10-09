@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -326,6 +327,34 @@ class Delivery(Base):
     attempts = relationship(
         "DeliveryAttempt", back_populates="delivery", cascade="all, delete-orphan", order_by="DeliveryAttempt.attempt_no"
     )
+    attachments = relationship(
+        "DeliveryAttachment", back_populates="delivery", cascade="all, delete-orphan", lazy="select"
+    )
+
+
+class DeliveryAttachment(Base):
+    __tablename__ = "delivery_attachments"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    delivery_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("deliveries.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[Optional[bytes]] = mapped_column(LargeBinary, nullable=True)
+    content_removed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    # Relationships
+    delivery = relationship("Delivery", back_populates="attachments")
 
 
 class DeliveryAttempt(Base):
