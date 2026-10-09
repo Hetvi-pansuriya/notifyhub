@@ -82,6 +82,15 @@ class DeliveryAttemptDetail(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DeliveryAttachmentSummary(BaseModel):
+    filename: str
+    content_type: str
+    size_bytes: int
+    available: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class DeliveryDetail(BaseModel):
     id: uuid.UUID
     to_email: str
@@ -100,6 +109,7 @@ class DeliveryDetail(BaseModel):
     created_at: datetime
     updated_at: datetime
     attempts: list[DeliveryAttemptDetail] = Field(default_factory=list)
+    attachments: list[DeliveryAttachmentSummary] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 

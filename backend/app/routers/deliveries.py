@@ -25,7 +25,10 @@ def list_deliveries(
     """Lists deliveries for the calling client with optional status filter and pagination."""
     query = (
         db.query(Delivery)
-        .options(selectinload(Delivery.attempts))
+        .options(
+            selectinload(Delivery.attempts),
+            selectinload(Delivery.attachments),
+        )
         .filter(Delivery.client_id == client.id)
     )
     if status is not None:
@@ -49,7 +52,10 @@ def retry_delivery(
     """
     delivery = (
         db.query(Delivery)
-        .options(selectinload(Delivery.attempts))
+        .options(
+            selectinload(Delivery.attempts),
+            selectinload(Delivery.attachments),
+        )
         .filter(Delivery.id == id, Delivery.client_id == client.id)
         .first()
     )
@@ -101,7 +107,10 @@ def get_delivery(
     """Gets delivery details and attempts for the calling client."""
     delivery = (
         db.query(Delivery)
-        .options(selectinload(Delivery.attempts))
+        .options(
+            selectinload(Delivery.attempts),
+            selectinload(Delivery.attachments),
+        )
         .filter(Delivery.id == id, Delivery.client_id == client.id)
         .first()
     )

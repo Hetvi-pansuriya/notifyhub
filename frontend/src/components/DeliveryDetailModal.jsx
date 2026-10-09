@@ -232,6 +232,47 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
             </pre>
           </div>
 
+          {/* Attachments */}
+          {delivery.attachments && delivery.attachments.length > 0 && (
+            <div>
+              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Attachments</div>
+              <div
+                style={{
+                  backgroundColor: '#161922',
+                  border: '1px solid #202431',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                {delivery.attachments.map((att, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '13px',
+                      color: '#f1f3f9',
+                    }}
+                  >
+                    <span style={{ fontWeight: 500 }}>{att.filename}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                      <span style={{ color: '#8c93a7' }}>{(att.size_bytes / 1024).toFixed(1)} KB</span>
+                      {!att.available && (
+                        <span style={{ color: '#f59e0b', fontSize: '11px' }}>
+                          Removed after sending
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Error Message if present */}
           {delivery.last_error && (
             <div

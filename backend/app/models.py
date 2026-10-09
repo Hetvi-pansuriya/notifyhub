@@ -356,6 +356,11 @@ class DeliveryAttachment(Base):
     # Relationships
     delivery = relationship("Delivery", back_populates="attachments")
 
+    @property
+    def available(self) -> bool:
+        """True while attachment bytes remain stored."""
+        return self.content is not None
+
 
 class DeliveryAttempt(Base):
     __tablename__ = "delivery_attempts"
