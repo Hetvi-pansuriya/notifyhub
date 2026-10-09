@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from './auth'
-import { useRoute } from './router'
+import { useRoute, matchRoute } from './router'
 import { Layout } from './components/Layout'
 
 // Auth Pages
@@ -24,7 +24,6 @@ import { AdminOverview } from './views/admin/AdminOverview'
 import { AdminClients } from './views/admin/AdminClients'
 import { AdminClientDetail } from './views/admin/AdminClientDetail'
 import { AdminPlans } from './views/admin/AdminPlans'
-import { AdminPayments } from './views/admin/AdminPayments'
 import { AdminSystemHealth } from './views/admin/AdminSystemHealth'
 import { AdminAuditLog } from './views/admin/AdminAuditLog'
 import { AdminSettings } from './views/admin/AdminSettings'
@@ -101,27 +100,31 @@ export function App() {
       return (
         <AdminOverview
           onSelectClient={(c) => {
-            setSelectedAdminClient(c)
-            navigate('/admin/clients')
+            navigate(`/admin/clients/${c.id}`)
           }}
         />
       )
     }
-    if (path === '/admin/clients') {
-      return selectedAdminClient ? (
+
+    const clientDetailMatch = matchRoute('/admin/clients/:id', path)
+    if (clientDetailMatch) {
+      return (
         <AdminClientDetail
-          client={selectedAdminClient}
-          onBack={() => setSelectedAdminClient(null)}
+          clientId={clientDetailMatch.id}
+          onBack={() => navigate('/admin/clients')}
         />
-      ) : (
-        <AdminClients onSelectClient={(c) => setSelectedAdminClient(c)} />
+      )
+    }
+
+    if (path === '/admin/clients') {
+      return (
+        <AdminClients
+          onSelectClient={(c) => navigate(`/admin/clients/${c.id}`)}
+        />
       )
     }
     if (path === '/admin/plans') {
       return <AdminPlans />
-    }
-    if (path === '/admin/payments') {
-      return <AdminPayments />
     }
     if (path === '/admin/health') {
       return <AdminSystemHealth />

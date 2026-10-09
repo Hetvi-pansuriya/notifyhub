@@ -460,6 +460,7 @@ def get_system_settings() -> dict:
     """Returns non-secret platform settings."""
     return {
         "mail_provider": settings.MAIL_PROVIDER,
+        "sendgrid_api_key_configured": bool(getattr(settings, "SENDGRID_API_KEY", None)),
         "global_daily_limit": settings.GLOBAL_DAILY_LIMIT,
         "default_rate_limit_per_sec": settings.DEFAULT_RATE_LIMIT_PER_SEC,
         "default_plan_name": settings.DEFAULT_PLAN_NAME,
@@ -468,5 +469,7 @@ def get_system_settings() -> dict:
         "max_active_keys": settings.MAX_ACTIVE_KEYS,
         "lock_seconds": settings.LOCK_SECONDS,
         "reaper_seconds": settings.REAPER_SECONDS,
-        "from_email": settings.FROM_EMAIL or "no-reply@notifyhub.local",
+        "from_email": getattr(settings, "FROM_EMAIL", None) or "no-reply@notifyhub.local",
+        "worker_concurrency": getattr(settings, "WORKER_CONCURRENCY", 2),
+        "log_level": getattr(settings, "LOG_LEVEL", "INFO"),
     }

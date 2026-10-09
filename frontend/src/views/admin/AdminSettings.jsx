@@ -1,180 +1,230 @@
-import React, { useState } from 'react';
-import { getAdminKey, setAdminKey, addAuditLog } from '../../api';
+import React, { useState, useEffect, useCallback } from 'react'
+import { request } from '../../api'
+import { ErrorState } from '../../components/ErrorState'
+import { Skeleton } from '../../components/Skeleton'
 
 export function AdminSettings() {
-  const [reqPerSec, setReqPerSec] = useState('50');
-  const [sendingSpeed, setSendingSpeed] = useState('20');
-  const [retrySchedule, setRetrySchedule] = useState('5s, 10s, 20s, 40s');
-  const [smtpHost, setSmtpHost] = useState('mailhog');
-  const [smtpPort, setSmtpPort] = useState('1025');
-  const [smtpFrom, setSmtpFrom] = useState('no-reply@notifyhub.local');
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [savedNotice, setSavedNotice] = useState(false);
+  const [settings, setSettings] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    addAuditLog({
-      action: 'Updated platform default settings',
-      client: 'Platform',
-      category: 'System',
-    });
-    setSavedNotice(true);
-    setTimeout(() => setSavedNotice(false), 2500);
-  };
-
-  const handleRotateAdminKey = () => {
-    if (window.confirm('Rotate master admin key?')) {
-      const newKey = `admin_secret_${Math.random().toString(36).substring(2, 12)}`;
-      setAdminKey(newKey);
-      addAuditLog({
-        action: 'Rotated master admin key',
-        client: 'Platform Master',
-        category: 'Security',
-      });
-      alert(`New master admin key generated: ${newKey}`);
+  const loadSettings = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await request('/admin/settings')
+      setSettings(data)
+      setLoading(false)
+    } catch (err) {
+      setError(err.message || 'Failed to load system settings')
+      setLoading(false)
     }
-  };
+  }, [])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <Skeleton variant="card" height="180px" />
+        <Skeleton variant="card" height="260px" />
+      </div>
+    )
+  }
+
+  if (error || !settings) {
+    return <ErrorState message={error || 'Settings unavailable'} onRetry={loadSettings} />
+  }
+
+  const CONFIG_GROUPS = [
+    {
+      title: 'Mail Delivery & Provider Configuration',
+      description: 'Controls which outbound transport is used to dispatch email messages.',
+      items: [
+        {
+          key: 'MAIL_PROVIDER',
+          label: 'Outbound Mail Provider',
+          value: settings.mail_provider || 'mailhog',
+          badge: settings.mail_provider === 'sendgrid' ? 'Production (SendGrid)' : 'Development (MailHog)',
+          badgeType: settings.mail_provider === 'sendgrid' ? 'blue' : 'gray',
+          env: 'MAIL_PROVIDER=sendgrid | mailhog',
+          note: 'Configured in backend/.env. MailHog is the default local inbox for dev.',
+        },
+        {
+          key: 'SENDGRID_API_KEY',
+          label: 'SendGrid Secret Key',
+          value: settings.sendgrid_api_key_configured ? 'Set and Active' : 'Not Set (Using MailHog)',
+          badge: settings.sendgrid_api_key_configured ? 'Configured' : 'Missing',
+          badgeType: settings.sendgrid_api_key_configured ? 'green' : 'orange',
+          env: 'SENDGRID_API_KEY=SG....',
+          note: 'Raw key is never exposed in responses or logs. Only present in server environment.',
+        },
+        {
+          key: 'FROM_EMAIL',
+          label: 'System Default Sender Address',
+          value: settings.from_email || 'no-reply@notifyhub.local',
+          env: 'FROM_EMAIL=...',
+          note: 'Fallback envelope address if a client has not configured a custom identity.',
+        },
+      ],
+    },
+    {
+      title: 'Safety Limits & Rate Limiting Engine',
+      description: 'Global system constraints that prevent spamming, abuse, and accidental runaway queues.',
+      items: [
+        {
+          key: 'GLOBAL_DAILY_LIMIT',
+          label: 'Global Safety Daily Ceiling',
+          value: `${(settings.global_daily_limit || 300).toLocaleString()} emails/day`,
+          env: 'GLOBAL_DAILY_LIMIT=...',
+          note: 'Maximum emails the platform can send across all tenants within a calendar day.',
+        },
+        {
+          key: 'DEFAULT_RATE_LIMIT_PER_SEC',
+          label: 'Default Rate Limit Throttle',
+          value: `${settings.default_rate_limit_per_sec || 50} requests / sec`,
+          env: 'DEFAULT_RATE_LIMIT_PER_SEC=...',
+          note: 'Initial token bucket refill rate for tenants without custom overrides.',
+        },
+        {
+          key: 'DEFAULT_PLAN',
+          label: 'Default Assigned Plan Tier',
+          value: `${settings.default_plan_name || 'Starter'} (${(settings.default_plan_monthly_limit || 10000).toLocaleString()}/mo)`,
+          env: 'DEFAULT_PLAN_NAME=... / DEFAULT_PLAN_MONTHLY_LIMIT=...',
+          note: 'Automatically granted to new signups upon self-service registration.',
+        },
+      ],
+    },
+    {
+      title: 'Worker Daemon & Operational Parameters',
+      description: 'Concurrency, lease timeout intervals, and session security.',
+      items: [
+        {
+          key: 'WORKER_CONCURRENCY',
+          label: 'Worker Thread Concurrency',
+          value: `${settings.worker_concurrency || 2} workers`,
+          env: 'WORKER_CONCURRENCY=...',
+          note: 'Concurrent delivery sender loops processing queue items.',
+        },
+        {
+          key: 'LOCK_SECONDS & REAPER_SECONDS',
+          label: 'Lock Lease & Reaper Interval',
+          value: `${settings.lock_seconds || 120}s lock timeout · ${settings.reaper_seconds || 60}s sweep`,
+          env: 'LOCK_SECONDS=... / REAPER_SECONDS=...',
+          note: 'Reaper re-enqueues orphaned processing jobs that exceeded lock lease duration.',
+        },
+        {
+          key: 'MAX_ACTIVE_KEYS',
+          label: 'Max Active API Keys Per Client',
+          value: `${settings.max_active_keys || 5} active keys`,
+          env: 'MAX_ACTIVE_KEYS=5',
+          note: 'Prevents credential sprawl on self-service tenants.',
+        },
+        {
+          key: 'LOG_LEVEL',
+          label: 'Server Logging Level',
+          value: settings.log_level || 'INFO',
+          env: 'LOG_LEVEL=...',
+          note: 'Application log verbosity for FastAPI server and worker daemon.',
+        },
+      ],
+    },
+  ]
 
   return (
-    <div className="admin-settings">
-      <div className="page-header">
-        <div className="page-header-text">
-          <h1>Settings</h1>
-          <p>Defaults and safety settings for the whole platform.</p>
-        </div>
-        <div className="page-header-actions">
-          <button className="btn-primary" onClick={handleSave}>
-            Save changes
-          </button>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {/* Header */}
+      <div>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+          System Configuration
+        </h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
+          Active platform parameters, security safeguards, and environment configuration (read-only)
+        </p>
       </div>
 
-      {savedNotice && (
-        <div className="info-banner" style={{ borderLeft: '3px solid #10b981', color: '#10b981', marginBottom: '20px' }}>
-          <span>✓ Settings saved successfully.</span>
-        </div>
-      )}
+      {/* Info notice about .env */}
+      <div
+        style={{
+          padding: '16px 20px',
+          backgroundColor: '#161922',
+          border: '1px solid #202431',
+          borderRadius: '12px',
+          fontSize: '13px',
+          color: 'var(--text-secondary, #8c93a7)',
+          lineHeight: 1.5,
+        }}
+      >
+        ℹ <strong style={{ color: '#ffffff' }}>Configuration Management:</strong> All operational parameters shown below are loaded directly from your server environment file (<code style={{ color: '#ffffff', fontFamily: 'monospace' }}>backend/.env</code>). To change any of these settings, update the respective environment variable and restart the containers with <code style={{ color: '#ffffff', fontFamily: 'monospace' }}>docker compose restart</code>.
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        {/* Defaults for new clients */}
-        <div className="card" style={{ marginBottom: 0 }}>
-          <div className="card-header">
-            <div className="card-title">Defaults for new clients</div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="form-group">
-              <label className="form-label">Requests per second</label>
-              <input
-                type="text"
-                className="form-input"
-                value={reqPerSec}
-                onChange={(e) => setReqPerSec(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Sending speed (emails per second)</label>
-              <input
-                type="text"
-                className="form-input"
-                value={sendingSpeed}
-                onChange={(e) => setSendingSpeed(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Retry after</label>
-              <input
-                type="text"
-                className="form-input"
-                value={retrySchedule}
-                onChange={(e) => setRetrySchedule(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Mail server */}
-        <div className="card" style={{ marginBottom: 0 }}>
-          <div className="card-header">
-            <div className="card-title">Mail server</div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="form-group">
-              <label className="form-label">Host</label>
-              <input
-                type="text"
-                className="form-input"
-                value={smtpHost}
-                onChange={(e) => setSmtpHost(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Port</label>
-              <input
-                type="text"
-                className="form-input"
-                value={smtpPort}
-                onChange={(e) => setSmtpPort(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">From address</label>
-              <input
-                type="text"
-                className="form-input"
-                value={smtpFrom}
-                onChange={(e) => setSmtpFrom(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Admin key */}
-        <div className="card" style={{ marginBottom: 0 }}>
-          <div className="card-header">
-            <div className="card-title">Admin key</div>
-          </div>
-          <p style={{ fontSize: '13px', color: '#8c93a7', marginBottom: '16px' }}>
-            Rotating it signs out everyone using the old one.
-          </p>
-          <div>
-            <button className="btn-secondary" onClick={handleRotateAdminKey}>
-              Rotate admin key
-            </button>
-          </div>
-        </div>
-
-        {/* Maintenance mode */}
-        <div className="card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div className="card-header" style={{ marginBottom: '8px' }}>
-              <div className="card-title">Maintenance mode</div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={maintenanceMode}
-                  onChange={() => setMaintenanceMode(!maintenanceMode)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-            <p style={{ fontSize: '13px', color: '#8c93a7' }}>
-              Pause all new emails while you work.
+      {/* Configuration Group Cards */}
+      {CONFIG_GROUPS.map((grp) => (
+        <div
+          key={grp.title}
+          style={{
+            backgroundColor: 'var(--bg-surface-card, #12141a)',
+            border: '1px solid var(--border-subtle, #1f232f)',
+            borderRadius: 'var(--radius-lg, 16px)',
+            padding: '24px',
+          }}
+        >
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+              {grp.title}
+            </h2>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
+              {grp.description}
             </p>
           </div>
 
-          {maintenanceMode && (
-            <div style={{ color: '#f59e0b', fontSize: '12px', marginTop: '14px' }}>
-              ⚠️ Maintenance mode is currently ON.
-            </div>
-          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {grp.items.map((item) => (
+              <div
+                key={item.key}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  padding: '14px 16px',
+                  backgroundColor: '#161922',
+                  borderRadius: '10px',
+                  border: '1px solid #202431',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                }}
+              >
+                <div style={{ maxWidth: '60%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#ffffff' }}>
+                      {item.label}
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#8c93a7', fontFamily: 'monospace', backgroundColor: '#101218', padding: '1px 6px', borderRadius: '4px' }}>
+                      {item.env}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)', marginTop: '4px' }}>
+                    {item.note}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#ffffff', fontFamily: 'monospace' }}>
+                    {item.value}
+                  </span>
+                  {item.badge && (
+                    <span className={`badge badge-${item.badgeType || 'gray'}`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ))}
     </div>
-  );
+  )
 }
