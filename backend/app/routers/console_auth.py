@@ -113,7 +113,7 @@ def signup(
         EventTypeSetting(client_id=client.id, event_type="otp", priority=2, ttl_seconds=300, retry_schedule=[2, 5], respect_opt_out=False, sensitive=True),
         EventTypeSetting(client_id=client.id, event_type="password_reset", priority=2, ttl_seconds=900, retry_schedule=[5, 10], respect_opt_out=False, sensitive=True),
         EventTypeSetting(client_id=client.id, event_type="welcome_email", priority=1, ttl_seconds=None, retry_schedule=[5, 10, 20], respect_opt_out=True, sensitive=False),
-        EventTypeSetting(client_id=client.id, event_type="report_email", priority=0, ttl_seconds=172800, retry_schedule=[60, 300], respect_opt_out=True, sensitive=False),
+        EventTypeSetting(client_id=client.id, event_type="report_email", priority=1, ttl_seconds=172800, retry_schedule=[60, 300], respect_opt_out=True, sensitive=False),
     ]
     for s in core_settings:
         db.add(s)
