@@ -1,5 +1,6 @@
 """Event intake processing service: validation, idempotency, strict rendering, and durable delivery creation."""
 
+import base64
 import hashlib
 import hmac
 import json
@@ -12,8 +13,22 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.exceptions import DailyLimitExceeded
-from app.models import Client, Delivery, EventTypeSetting, NotificationEvent, Preference, Recipient, Template
-from app.schemas.events import EventCreate, EventDetailResponse, EventIntakeResponse
+from app.models import (
+    Client,
+    Delivery,
+    DeliveryAttachment,
+    EventTypeSetting,
+    NotificationEvent,
+    Preference,
+    Recipient,
+    Template,
+)
+from app.schemas.events import (
+    AttachmentInput,
+    EventCreate,
+    EventDetailResponse,
+    EventIntakeResponse,
+)
 from app.services.rendering import render
 
 
@@ -155,6 +170,92 @@ def resolve_recipient_and_opt_out(
     return to_email, is_opted_out
 
 
+def validate_and_decode_attachments(
+    attachments: Optional[list[AttachmentInput]],
+    is_sensitive: bool,
+) -> list[tuple[str, str, bytes]]:
+    """Validates attachment constraints and strictly decodes base64 content."""
+    if not attachments:
+        return []
+
+    if is_sensitive:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Sensitive emails cannot have attachments",
+        )
+
+    if len(attachments) > settings.ATTACHMENT_MAX_COUNT:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Cannot exceed {settings.ATTACHMENT_MAX_COUNT} attachments",
+        )
+
+    allowed_types = {
+        t.strip().lower()
+        for t in settings.ATTACHMENT_ALLOWED_TYPES.split(",")
+        if t.strip()
+    }
+
+    decoded_items: list[tuple[str, str, bytes]] = []
+    total_bytes = 0
+    max_total_bytes = settings.ATTACHMENT_MAX_TOTAL_MB * 1024 * 1024
+
+    for att in attachments:
+        if not att.filename or len(att.filename) > 100:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Attachment filename must be between 1 and 100 characters",
+            )
+        if "/" in att.filename or "\\" in att.filename:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Attachment filename cannot contain path separators",
+            )
+        if any(ord(c) < 32 or ord(c) == 127 for c in att.filename):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Attachment filename cannot contain control characters or line breaks",
+            )
+
+        content_type = att.content_type.strip().lower()
+        if content_type not in allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Attachment content type '{att.content_type}' is not allowed",
+            )
+
+        try:
+            decoded = base64.b64decode(att.content_base64, validate=True)
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid base64 encoding for attachment '{att.filename}'",
+            )
+
+        if len(decoded) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Attachment '{att.filename}' cannot be empty",
+            )
+
+        if content_type == "application/pdf" and not decoded.startswith(b"%PDF-"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Attachment '{att.filename}' is not a valid PDF",
+            )
+
+        total_bytes += len(decoded)
+        decoded_items.append((att.filename, att.content_type, decoded))
+
+    if total_bytes > max_total_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Total attachment size exceeds {settings.ATTACHMENT_MAX_TOTAL_MB}MB limit",
+        )
+
+    return decoded_items
+
+
 def save_event_and_delivery(
     db: Session,
     client_id: uuid.UUID,
@@ -169,11 +270,9 @@ def save_event_and_delivery(
     setting: EventTypeSetting,
     is_skipped: bool,
     send_at: Optional[datetime] = None,
+    attachments_to_save: Optional[list[tuple[str, str, bytes]]] = None,
 ) -> tuple[NotificationEvent, Delivery]:
-    """Atomically inserts the notification_event and delivery in ONE database transaction.
-    
-    If concurrent request arrives with the same idempotency key, handles IntegrityError gracefully.
-    """
+    """Atomically inserts notification_event, delivery, and attachments in ONE transaction."""
     now = datetime.now(timezone.utc)
     base_time = send_at if send_at is not None else now
     expires_at = (
@@ -216,6 +315,18 @@ def save_event_and_delivery(
     try:
         db.add(event)
         db.add(delivery)
+        if attachments_to_save:
+            for filename, content_type, file_bytes in attachments_to_save:
+                att_row = DeliveryAttachment(
+                    delivery=delivery,
+                    filename=filename,
+                    content_type=content_type,
+                    size_bytes=len(file_bytes),
+                    content=None if is_skipped else file_bytes,
+                    content_removed_at=now if is_skipped else None,
+                    created_at=now,
+                )
+                db.add(att_row)
         db.commit()
         db.refresh(event)
         db.refresh(delivery)
@@ -243,7 +354,6 @@ def process_event_intake(
     Returns:
         tuple (EventIntakeResponse, http_status_code)
     """
-    # 1. Quick lookup of event settings to check if sensitive for HMAC computation
     raw_setting = (
         db.query(EventTypeSetting)
         .filter(
@@ -254,18 +364,39 @@ def process_event_intake(
     )
     is_sensitive = raw_setting.sensitive if raw_setting is not None else False
 
-    # 2. Idempotency hash calculation and lookup
+    decoded_attachments = validate_and_decode_attachments(
+        event_data.attachments, is_sensitive=is_sensitive
+    )
+
     payload_dict = event_data.model_dump(mode="json")
+    if not event_data.attachments:
+        payload_dict.pop("attachments", None)
+    else:
+        payload_dict["attachments"] = [
+            {
+                "filename": filename,
+                "content_type": content_type,
+                "sha256": hashlib.sha256(file_bytes).hexdigest(),
+            }
+            for filename, content_type, file_bytes in decoded_attachments
+        ]
     request_hash = compute_request_hash(payload_dict, is_sensitive=is_sensitive)
 
     existing = check_existing_idempotency(db, client_id, idempotency_key, request_hash)
     if existing is not None:
         event, delivery = existing
-        # Replay: 200 OK
+        att_count = (
+            db.query(DeliveryAttachment)
+            .filter(DeliveryAttachment.delivery_id == delivery.id)
+            .count()
+            if delivery
+            else 0
+        )
         resp = EventIntakeResponse(
             event_id=event.id,
             send_at=event.send_at,
             delivery=delivery,
+            attachment_count=att_count,
         )
         return resp, status.HTTP_200_OK
 
@@ -380,7 +511,6 @@ def process_event_intake(
         event_data.data,
     )
 
-    # 6. Save event and delivery in ONE atomic transaction
     event, delivery = save_event_and_delivery(
         db=db,
         client_id=client_id,
@@ -395,13 +525,14 @@ def process_event_intake(
         setting=setting,
         is_skipped=is_opted_out,
         send_at=event_data.send_at,
+        attachments_to_save=decoded_attachments,
     )
 
-    # 7. Return 202 Accepted
     resp = EventIntakeResponse(
         event_id=event.id,
         send_at=event.send_at,
         delivery=delivery,
+        attachment_count=len(decoded_attachments),
     )
     return resp, status.HTTP_202_ACCEPTED
 

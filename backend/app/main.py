@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.exceptions import DailyLimitExceeded
 
 from app.db import get_db
@@ -41,6 +42,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def check_payload_size(request: Request, call_next):
+    if request.method == "POST" and request.url.path.rstrip("/") == "/api/events":
+        content_length_str = request.headers.get("content-length")
+        if content_length_str:
+            try:
+                content_length = int(content_length_str)
+                max_bytes = int(settings.ATTACHMENT_MAX_TOTAL_MB * 1024 * 1024 * 1.4 + 1024 * 1024)
+                if content_length > max_bytes:
+                    return JSONResponse(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        content={"detail": "Payload Too Large"},
+                    )
+            except ValueError:
+                pass
+    return await call_next(request)
 
 
 @app.exception_handler(DailyLimitExceeded)

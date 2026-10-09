@@ -6,6 +6,12 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
+class AttachmentInput(BaseModel):
+    filename: str
+    content_type: str
+    content_base64: str
+
+
 class EventCreate(BaseModel):
     event_type: str = Field(..., min_length=1, max_length=100, description="Type of event (e.g. order_shipped, auth_otp)")
     recipient_id: Optional[uuid.UUID] = Field(None, description="Registered recipient UUID")
@@ -19,6 +25,7 @@ class EventCreate(BaseModel):
         description="Optional scheduled time in ISO 8601 with timezone",
     )
     data: dict[str, Any] = Field(default_factory=dict, description="Variables for template rendering")
+    attachments: Optional[list[AttachmentInput]] = Field(None, description="Optional list of attachments")
 
     @field_validator("send_at")
     @classmethod
@@ -60,6 +67,7 @@ class EventIntakeResponse(BaseModel):
     event_id: uuid.UUID
     send_at: Optional[datetime] = None
     delivery: DeliverySummary
+    attachment_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
