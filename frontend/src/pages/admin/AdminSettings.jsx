@@ -7,13 +7,27 @@ export function AdminSettings() {
   const [settings, setSettings] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
-  // Test email state
+  // Form Fields matching mockup 16_admin_settings.png
+  const [requestsPerSec, setRequestsPerSec] = useState('50')
+  const [sendingSpeed, setSendingSpeed] = useState('20')
+  const [retryAfter, setRetryAfter] = useState('5s, 10s, 20s, 40s')
+  const [host, setHost] = useState('smtp.example.com')
+  const [port, setPort] = useState('587')
+  const [fromAddress, setFromAddress] = useState('no-reply@notifyhub.example')
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
+
+  // Rotate key state
+  const [rotatedKey, setRotatedKey] = useState(null)
+  const [rotatingKey, setRotatingKey] = useState(false)
+
+  // Diagnostics state
+  const [showDiagnostics, setShowDiagnostics] = useState(false)
   const [testRecipient, setTestRecipient] = useState('')
   const [sendingTest, setSendingTest] = useState(false)
   const [testResult, setTestResult] = useState(null)
-
-  // Connection probe state
   const [probing, setProbing] = useState(false)
   const [probeResult, setProbeResult] = useState(null)
 
@@ -23,6 +37,13 @@ export function AdminSettings() {
     try {
       const data = await request('/admin/settings')
       setSettings(data)
+      setRequestsPerSec(String(data.requests_per_sec || data.default_rate_limit_per_sec || 50))
+      setSendingSpeed(String(data.sending_speed || 20))
+      setRetryAfter(data.retry_after || '5s, 10s, 20s, 40s')
+      setHost(data.smtp_host || 'smtp.example.com')
+      setPort(String(data.smtp_port || 587))
+      setFromAddress(data.from_address || data.from_email || 'no-reply@notifyhub.example')
+      setMaintenanceMode(Boolean(data.maintenance_mode))
       setLoading(false)
     } catch (err) {
       setError(err.message || 'Failed to load system settings')
@@ -33,6 +54,47 @@ export function AdminSettings() {
   useEffect(() => {
     loadSettings()
   }, [loadSettings])
+
+  const handleSaveChanges = async (e) => {
+    if (e) e.preventDefault()
+    setSaving(true)
+    setSaveSuccess(false)
+    try {
+      await request('/admin/settings', {
+        method: 'PATCH',
+        body: {
+          requests_per_sec: Number(requestsPerSec) || 50,
+          sending_speed: Number(sendingSpeed) || 20,
+          retry_after: retryAfter,
+          smtp_host: host,
+          smtp_port: Number(port) || 587,
+          from_address: fromAddress,
+          maintenance_mode: maintenanceMode,
+        },
+      })
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 4000)
+    } catch (err) {
+      alert(`Failed to save settings: ${err.message}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRotateKey = async () => {
+    if (!window.confirm('Are you sure you want to rotate the admin key? This will invalidate existing master API sessions.')) {
+      return
+    }
+    setRotatingKey(true)
+    try {
+      const res = await request('/admin/settings/rotate-admin-key', { method: 'POST' })
+      setRotatedKey(res.new_admin_key)
+    } catch (err) {
+      alert(`Key rotation failed: ${err.message}`)
+    } finally {
+      setRotatingKey(false)
+    }
+  }
 
   const handleTestConnection = async () => {
     setProbing(true)
@@ -58,7 +120,7 @@ export function AdminSettings() {
         body: {
           recipient: testRecipient.trim(),
           subject: 'NotifyHub Diagnostic Verification Email',
-          body: 'Hello! This is a real diagnostic email dispatched directly from your NotifyHub Admin Console.',
+          body: 'Hello! This is a real diagnostic email dispatched from your NotifyHub Admin Console.',
         },
       })
       setTestResult({
@@ -75,348 +137,408 @@ export function AdminSettings() {
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <Skeleton variant="card" height="180px" />
-        <Skeleton variant="card" height="260px" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Skeleton variant="text" width="140px" height="28px" />
+          <Skeleton variant="button" width="120px" height="36px" />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <Skeleton variant="card" height="260px" />
+          <Skeleton variant="card" height="260px" />
+          <Skeleton variant="card" height="140px" />
+          <Skeleton variant="card" height="140px" />
+        </div>
       </div>
     )
   }
 
-  if (error || !settings) {
-    return <ErrorState message={error || 'Settings unavailable'} onRetry={loadSettings} />
+  if (error) {
+    return <ErrorState message={error} onRetry={loadSettings} />
   }
-
-  const CONFIG_GROUPS = [
-    {
-      title: 'Mail Delivery & Provider Configuration',
-      description: 'Controls which outbound transport is used to dispatch email messages.',
-      items: [
-        {
-          key: 'MAIL_PROVIDER',
-          label: 'Outbound Mail Provider',
-          value: settings.mail_provider || 'mailhog',
-          badge: settings.mail_provider === 'sendgrid' ? 'Production (SendGrid)' : 'Development (MailHog)',
-          badgeType: settings.mail_provider === 'sendgrid' ? 'blue' : 'gray',
-          env: 'MAIL_PROVIDER=sendgrid | mailhog',
-          note: 'Configured in backend/.env. MailHog is the default local inbox for dev.',
-        },
-        {
-          key: 'SENDGRID_API_KEY',
-          label: 'SendGrid Secret Key',
-          value: settings.sendgrid_api_key_configured ? 'Set and Active' : 'Not Set (Using MailHog)',
-          badge: settings.sendgrid_api_key_configured ? 'Configured' : 'Missing',
-          badgeType: settings.sendgrid_api_key_configured ? 'green' : 'orange',
-          env: 'SENDGRID_API_KEY=SG....',
-          note: 'Raw key is never exposed in responses or logs. Only present in server environment.',
-        },
-        {
-          key: 'FROM_EMAIL',
-          label: 'System Default Sender Address',
-          value: settings.from_email || 'no-reply@notifyhub.local',
-          env: 'FROM_EMAIL=...',
-          note: 'Fallback envelope address if a client has not configured a custom identity.',
-        },
-      ],
-    },
-    {
-      title: 'Safety Limits & Rate Limiting Engine',
-      description: 'Global system constraints that prevent spamming, abuse, and accidental runaway queues.',
-      items: [
-        {
-          key: 'GLOBAL_DAILY_LIMIT',
-          label: 'Global Safety Daily Ceiling',
-          value: `${(settings.global_daily_limit || 90).toLocaleString()} emails/day`,
-          env: 'GLOBAL_DAILY_LIMIT=90',
-          note: 'Maximum emails the platform can send across all tenants within a calendar day.',
-        },
-        {
-          key: 'DEFAULT_RATE_LIMIT_PER_SEC',
-          label: 'Default Rate Limit Throttle',
-          value: `${settings.default_rate_limit_per_sec || 50} requests / sec`,
-          env: 'DEFAULT_RATE_LIMIT_PER_SEC=...',
-          note: 'Initial token bucket refill rate for tenants without custom overrides.',
-        },
-        {
-          key: 'DEFAULT_PLAN',
-          label: 'Default Assigned Plan Tier',
-          value: `${settings.default_plan_name || 'Starter'} (${(settings.default_plan_monthly_limit || 10000).toLocaleString()}/mo)`,
-          env: 'DEFAULT_PLAN_NAME=Starter',
-          note: 'Automatically granted to new signups upon self-service registration.',
-        },
-      ],
-    },
-    {
-      title: 'Worker Daemon & Operational Parameters',
-      description: 'Concurrency, lease timeout intervals, and session security.',
-      items: [
-        {
-          key: 'WORKER_CONCURRENCY',
-          label: 'Worker Thread Concurrency',
-          value: `${settings.worker_concurrency || 2} workers`,
-          env: 'WORKER_CONCURRENCY=...',
-          note: 'Concurrent delivery sender loops processing queue items.',
-        },
-        {
-          key: 'LOCK_SECONDS & REAPER_SECONDS',
-          label: 'Lock Lease & Reaper Interval',
-          value: `${settings.lock_seconds || 60}s lock timeout · ${settings.reaper_seconds || 30}s sweep`,
-          env: 'LOCK_SECONDS=60 / REAPER_SECONDS=30',
-          note: 'Reaper re-enqueues orphaned processing jobs that exceeded lock lease duration.',
-        },
-        {
-          key: 'MAX_ACTIVE_KEYS',
-          label: 'Max Active API Keys Per Client',
-          value: `${settings.max_active_keys || 5} active keys`,
-          env: 'MAX_ACTIVE_KEYS=5',
-          note: 'Prevents credential sprawl on self-service tenants.',
-        },
-        {
-          key: 'LOG_LEVEL',
-          label: 'Server Logging Level',
-          value: settings.log_level || 'INFO',
-          env: 'LOG_LEVEL=INFO',
-          note: 'Application log verbosity for FastAPI server and worker daemon.',
-        },
-      ],
-    },
-  ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-      {/* Header */}
-      <div>
-        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
-          System Configuration & Diagnostics
-        </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
-          Active platform parameters, mail provider connectivity probes, and diagnostic dispatch tools
-        </p>
-      </div>
-
-      {/* Interactive Diagnostics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
-        {/* Test Email Dispatch Card */}
-        <div
-          style={{
-            backgroundColor: 'var(--bg-surface-card, #12141a)',
-            border: '1px solid var(--border-subtle, #1f232f)',
-            borderRadius: 'var(--radius-lg, 16px)',
-            padding: '24px',
-          }}
-        >
-          <div style={{ marginBottom: '14px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
-              Dispatch Test Email
-            </h2>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
-              Send an immediate diagnostic email through the active mail provider ({settings.mail_provider || 'smtp'})
-            </p>
-          </div>
-
-          <form onSubmit={handleSendTestEmail} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#8c93a7', marginBottom: '6px' }}>
-                Recipient Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={testRecipient}
-                onChange={(e) => setTestRecipient(e.target.value)}
-                placeholder="developer@example.com"
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  backgroundColor: '#161922',
-                  border: '1px solid var(--border-subtle, #1f232f)',
-                  borderRadius: '8px',
-                  color: '#ffffff',
-                  fontSize: '13px',
-                  outline: 'none',
-                }}
-              />
-            </div>
-
-            {testResult && (
-              <div
-                style={{
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  fontSize: '12.5px',
-                  backgroundColor: testResult.type === 'success' ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                  color: testResult.type === 'success' ? '#4ade80' : '#ef4444',
-                  border: `1px solid ${testResult.type === 'success' ? 'rgba(74, 222, 128, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
-                }}
-              >
-                {testResult.text}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={sendingTest || !testRecipient.trim()}
-              style={{ alignSelf: 'flex-start' }}
-            >
-              {sendingTest ? 'Sending Test...' : 'Send Test Message'}
-            </button>
-          </form>
+      {/* Header matching mockup 16_admin_settings.png */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+            Settings
+          </h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary, #8c93a7)', margin: '6px 0 0 0' }}>
+            Defaults and safety settings for the whole platform.
+          </p>
         </div>
 
-        {/* Connectivity Probe Card */}
-        <div
-          style={{
-            backgroundColor: 'var(--bg-surface-card, #12141a)',
-            border: '1px solid var(--border-subtle, #1f232f)',
-            borderRadius: 'var(--radius-lg, 16px)',
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ marginBottom: '14px' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
-                Provider Connectivity Probe
-              </h2>
-              <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
-                Test low-level network socket connectivity and latency to the active outbound mail server
-              </p>
-            </div>
-
-            <div
-              style={{
-                padding: '14px 16px',
-                backgroundColor: '#161922',
-                borderRadius: '10px',
-                border: '1px solid #202431',
-                marginBottom: '16px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#8c93a7' }}>Configured Provider:</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', fontFamily: 'monospace' }}>
-                  {settings.mail_provider === 'sendgrid' ? 'SendGrid Web API' : 'MailHog Local SMTP'}
-                </span>
-              </div>
-              {probeResult && (
-                <div style={{ marginTop: '12px', borderTop: '1px solid #202431', paddingTop: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12.5px', color: '#8c93a7' }}>Probe Status:</span>
-                    <span className={`badge badge-${probeResult.status === 'ok' ? 'green' : 'red'}`}>
-                      {probeResult.status === 'ok' ? 'Connected' : 'Connection Failed'}
-                    </span>
-                  </div>
-                  {probeResult.latency_ms !== undefined && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12.5px', color: '#8c93a7' }}>Round-trip Latency:</span>
-                      <span style={{ fontSize: '12.5px', color: '#4ade80', fontFamily: 'monospace' }}>
-                        {probeResult.latency_ms} ms
-                      </span>
-                    </div>
-                  )}
-                  {probeResult.error && (
-                    <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>
-                      {probeResult.error}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {saveSuccess && (
+            <span style={{ fontSize: '13px', color: '#10b981', fontWeight: 500 }}>
+              ✓ Settings saved
+            </span>
+          )}
           <button
             type="button"
-            className="btn-secondary"
-            onClick={handleTestConnection}
-            disabled={probing}
-            style={{ alignSelf: 'flex-start' }}
+            onClick={handleSaveChanges}
+            disabled={saving}
+            style={{
+              backgroundColor: '#ffffff',
+              color: '#0a0d14',
+              border: 'none',
+              borderRadius: '9999px',
+              padding: '8px 22px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: saving ? 'not-allowed' : 'pointer',
+              opacity: saving ? 0.7 : 1,
+              transition: 'opacity 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!saving) e.currentTarget.style.opacity = '0.9'
+            }}
+            onMouseLeave={(e) => {
+              if (!saving) e.currentTarget.style.opacity = '1'
+            }}
           >
-            {probing ? 'Probing Connection...' : 'Test Provider Connectivity'}
+            {saving ? 'Saving...' : 'Save changes'}
           </button>
         </div>
       </div>
 
-      {/* Info notice about .env */}
-      <div
-        style={{
-          padding: '16px 20px',
-          backgroundColor: '#161922',
-          border: '1px solid #202431',
-          borderRadius: '12px',
-          fontSize: '13px',
-          color: 'var(--text-secondary, #8c93a7)',
-          lineHeight: 1.5,
-        }}
-      >
-        ℹ <strong style={{ color: '#ffffff' }}>Configuration Management:</strong> All operational parameters shown below are loaded directly from your server environment file (<code style={{ color: '#ffffff', fontFamily: 'monospace' }}>backend/.env</code>). To change any of these settings, update the respective environment variable and restart the containers with <code style={{ color: '#ffffff', fontFamily: 'monospace' }}>docker compose restart</code>.
-      </div>
-
-      {/* Configuration Group Cards */}
-      {CONFIG_GROUPS.map((grp) => (
+      {/* 2x2 Grid Cards matching mockup 16_admin_settings.png */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '16px' }}>
+        {/* Card 1: Defaults for new clients */}
         <div
-          key={grp.title}
           style={{
             backgroundColor: 'var(--bg-surface-card, #12141a)',
             border: '1px solid var(--border-subtle, #1f232f)',
-            borderRadius: 'var(--radius-lg, 16px)',
+            borderRadius: '16px',
             padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px',
           }}
         >
-          <div style={{ marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
-              {grp.title}
-            </h2>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
-              {grp.description}
+          <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+            Defaults for new clients
+          </h3>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+              Requests per second
+            </label>
+            <input
+              type="number"
+              className="input-field"
+              value={requestsPerSec}
+              onChange={(e) => setRequestsPerSec(e.target.value)}
+              placeholder="50"
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+              Sending speed (emails per second)
+            </label>
+            <input
+              type="number"
+              className="input-field"
+              value={sendingSpeed}
+              onChange={(e) => setSendingSpeed(e.target.value)}
+              placeholder="20"
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+              Retry after
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={retryAfter}
+              onChange={(e) => setRetryAfter(e.target.value)}
+              placeholder="5s, 10s, 20s, 40s"
+            />
+          </div>
+        </div>
+
+        {/* Card 2: Mail server */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface-card, #12141a)',
+            border: '1px solid var(--border-subtle, #1f232f)',
+            borderRadius: '16px',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px',
+          }}
+        >
+          <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+            Mail server
+          </h3>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+              Host
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+              placeholder="smtp.example.com"
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+              Port
+            </label>
+            <input
+              type="number"
+              className="input-field"
+              value={port}
+              onChange={(e) => setPort(e.target.value)}
+              placeholder="587"
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+              From address
+            </label>
+            <input
+              type="email"
+              className="input-field"
+              value={fromAddress}
+              onChange={(e) => setFromAddress(e.target.value)}
+              placeholder="no-reply@notifyhub.example"
+            />
+          </div>
+        </div>
+
+        {/* Card 3: Admin key */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface-card, #12141a)',
+            border: '1px solid var(--border-subtle, #1f232f)',
+            borderRadius: '16px',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '16px',
+          }}
+        >
+          <div>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: '0 0 6px 0' }}>
+              Admin key
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary, #8c93a7)', margin: 0 }}>
+              Rotating it signs out everyone using the old one.
             </p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {grp.items.map((item) => (
-              <div
-                key={item.key}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  padding: '14px 16px',
-                  backgroundColor: '#161922',
-                  borderRadius: '10px',
-                  border: '1px solid #202431',
-                  flexWrap: 'wrap',
-                  gap: '12px',
-                }}
-              >
-                <div style={{ maxWidth: '60%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#ffffff' }}>
-                      {item.label}
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#8c93a7', fontFamily: 'monospace', backgroundColor: '#101218', padding: '1px 6px', borderRadius: '4px' }}>
-                      {item.env}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)', marginTop: '4px' }}>
-                    {item.note}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#ffffff', fontFamily: 'monospace' }}>
-                    {item.value}
-                  </span>
-                  {item.badge && (
-                    <span className={`badge badge-${item.badgeType || 'gray'}`}>
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+          <div>
+            <button
+              type="button"
+              onClick={handleRotateKey}
+              disabled={rotatingKey}
+              style={{
+                backgroundColor: '#1b1f2b',
+                color: '#ffffff',
+                border: '1px solid #2d3345',
+                borderRadius: '8px',
+                padding: '8px 18px',
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: rotatingKey ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {rotatingKey ? 'Rotating...' : 'Rotate admin key'}
+            </button>
           </div>
+
+          {rotatedKey && (
+            <div
+              style={{
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                padding: '12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: '#ffffff',
+              }}
+            >
+              <div style={{ color: '#10b981', fontWeight: 600, marginBottom: '4px' }}>
+                New Admin Key Generated:
+              </div>
+              <code style={{ wordBreak: 'break-all', fontFamily: 'monospace', color: '#a7f3d0' }}>
+                {rotatedKey}
+              </code>
+            </div>
+          )}
         </div>
-      ))}
+
+        {/* Card 4: Maintenance mode */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface-card, #12141a)',
+            border: '1px solid var(--border-subtle, #1f232f)',
+            borderRadius: '16px',
+            padding: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+          }}
+        >
+          <div>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: '0 0 6px 0' }}>
+              Maintenance mode
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary, #8c93a7)', margin: 0 }}>
+              Pause all new emails while you work.
+            </p>
+          </div>
+
+          {/* Toggle Switch */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={maintenanceMode}
+            onClick={() => setMaintenanceMode(!maintenanceMode)}
+            style={{
+              position: 'relative',
+              width: '46px',
+              height: '26px',
+              backgroundColor: maintenanceMode ? '#10b981' : '#2d3345',
+              borderRadius: '9999px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s ease',
+              padding: 0,
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: '3px',
+                left: maintenanceMode ? '23px' : '3px',
+                width: '20px',
+                height: '20px',
+                backgroundColor: '#ffffff',
+                borderRadius: '50%',
+                transition: 'left 0.2s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+              }}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* Diagnostics Toggle */}
+      <div style={{ marginTop: '8px' }}>
+        <button
+          type="button"
+          onClick={() => setShowDiagnostics(!showDiagnostics)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-secondary, #8c93a7)',
+            fontSize: '13px',
+            cursor: 'pointer',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <span>{showDiagnostics ? '▼ Hide' : '▶ Show'} Connectivity & Diagnostic Tools</span>
+        </button>
+
+        {showDiagnostics && (
+          <div
+            style={{
+              marginTop: '16px',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '16px',
+            }}
+          >
+            {/* Test Connection */}
+            <div
+              style={{
+                backgroundColor: 'var(--bg-surface-card, #12141a)',
+                border: '1px solid var(--border-subtle, #1f232f)',
+                borderRadius: '16px',
+                padding: '20px',
+              }}
+            >
+              <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', margin: '0 0 8px 0' }}>
+                Test Connection
+              </h4>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', margin: '0 0 14px 0' }}>
+                Probe network socket reachability to your SMTP or provider host.
+              </p>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleTestConnection}
+                disabled={probing}
+                style={{ fontSize: '12px' }}
+              >
+                {probing ? 'Probing...' : 'Run connection probe'}
+              </button>
+              {probeResult && (
+                <div style={{ marginTop: '12px', fontSize: '12px', color: probeResult.status === 'ok' ? '#10b981' : '#ef4444' }}>
+                  {probeResult.status === 'ok'
+                    ? `Connected to ${probeResult.provider} (${probeResult.latency_ms}ms)`
+                    : `Probe failed: ${probeResult.error}`}
+                </div>
+              )}
+            </div>
+
+            {/* Send Test Email */}
+            <div
+              style={{
+                backgroundColor: 'var(--bg-surface-card, #12141a)',
+                border: '1px solid var(--border-subtle, #1f232f)',
+                borderRadius: '16px',
+                padding: '20px',
+              }}
+            >
+              <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', margin: '0 0 8px 0' }}>
+                Send Diagnostic Email
+              </h4>
+              <form onSubmit={handleSendTestEmail} style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <input
+                  type="email"
+                  className="input-field"
+                  placeholder="admin@example.com"
+                  value={testRecipient}
+                  onChange={(e) => setTestRecipient(e.target.value)}
+                  style={{ flex: 1, fontSize: '13px' }}
+                  required
+                />
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={sendingTest}
+                  style={{ fontSize: '12px' }}
+                >
+                  {sendingTest ? 'Sending...' : 'Send'}
+                </button>
+              </form>
+              {testResult && (
+                <div style={{ marginTop: '10px', fontSize: '12px', color: testResult.type === 'success' ? '#10b981' : '#ef4444' }}>
+                  {testResult.text}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

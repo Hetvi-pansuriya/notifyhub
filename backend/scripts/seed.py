@@ -47,12 +47,21 @@ def seed_admin() -> None:
             user.password_hash = password_hash
             user.role = "admin"
         # Seed 3 standard platform plans if missing
+        # Seed 3 standard platform plans: Starter, Growth, Scale
         from app.models import Plan
         plans_data = [
             ("Starter", "Free tier for development and early stage apps", 10000, 30, 50),
-            ("Pro", "Growing businesses requiring higher daily sending throughput", 50000, 100, 100),
-            ("Enterprise", "Large scale transactional email volume with dedicated rate ceilings", 250000, 500, 200),
+            ("Growth", "Growing businesses requiring higher daily sending throughput", 50000, 100, 100),
+            ("Scale", "Large scale transactional email volume with dedicated rate ceilings", 250000, 500, 200),
         ]
+        # Rename legacy names if present
+        pro = db.query(Plan).filter(Plan.name == "Pro").first()
+        if pro:
+            pro.name = "Growth"
+        ent = db.query(Plan).filter(Plan.name == "Enterprise").first()
+        if ent:
+            ent.name = "Scale"
+
         for name, desc, m_lim, d_lim, r_lim in plans_data:
             p = db.query(Plan).filter(Plan.name == name).first()
             if p is None:
@@ -63,6 +72,12 @@ def seed_admin() -> None:
                 p.monthly_email_limit = m_lim
                 p.daily_email_limit = d_lim
                 p.rate_limit_per_sec = r_lim
+
+        # Delete any non-standard test plans that have no clients
+        extra_plans = db.query(Plan).filter(~Plan.name.in_(["Starter", "Growth", "Scale"])).all()
+        for ep in extra_plans:
+            if not ep.clients:
+                db.delete(ep)
         db.commit()
     finally:
         db.close()

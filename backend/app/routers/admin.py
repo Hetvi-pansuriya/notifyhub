@@ -60,6 +60,41 @@ def get_settings():
     return admin_service.get_system_settings()
 
 
+class SettingsUpdateRequest(BaseModel):
+    requests_per_sec: Optional[int] = None
+    sending_speed: Optional[int] = None
+    retry_after: Optional[str] = None
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    from_address: Optional[str] = None
+    maintenance_mode: Optional[bool] = None
+
+
+@router.patch("/settings", summary="Update platform settings")
+def update_settings(data: SettingsUpdateRequest, db: Session = Depends(get_db)):
+    if data.requests_per_sec is not None:
+        settings.DEFAULT_RATE_LIMIT_PER_SEC = data.requests_per_sec
+    if data.sending_speed is not None:
+        settings.OUTGOING_RATE_PER_SEC = data.sending_speed
+    if data.smtp_host is not None:
+        settings.SMTP_HOST = data.smtp_host
+    if data.smtp_port is not None:
+        settings.SMTP_PORT = data.smtp_port
+    if data.from_address is not None:
+        settings.FROM_EMAIL = data.from_address
+        settings.SMTP_FROM = data.from_address
+    return admin_service.get_system_settings()
+
+
+@router.post("/settings/rotate-admin-key", summary="Rotate platform admin key")
+def rotate_admin_key():
+    import secrets
+    new_key = f"nh_admin_{secrets.token_hex(16)}"
+    settings.ADMIN_KEY = new_key
+    return {"status": "success", "new_admin_key": new_key}
+
+
+
 class TestEmailRequest(BaseModel):
     recipient: str
     subject: Optional[str] = "NotifyHub Diagnostic Test Email"

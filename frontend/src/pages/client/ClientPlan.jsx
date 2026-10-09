@@ -239,16 +239,20 @@ export function ClientPlan() {
                   </p>
 
                   <div style={{ fontSize: '26px', fontWeight: 700, color: '#ffffff', marginBottom: '20px' }}>
-                    {p.name === 'Starter' ? '$0' : p.name === 'Pro' ? '$29' : '$99'}
+                    ₹{p.name.toLowerCase().includes('start') ? '0' : (p.name.toLowerCase().includes('grow') || p.name.toLowerCase().includes('pro')) ? '2,499' : '9,999'}
                     <span style={{ fontSize: '13px', fontWeight: 400, color: 'var(--text-muted, #585f73)' }}>
-                      {' '}/ month
+                      {' '}/month
                     </span>
                   </div>
 
                   <div style={{ borderTop: '1px solid #1a1d27', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
                       <span style={{ color: '#10b981' }}>✓</span>
-                      <span>{(p.monthly_email_limit || 0).toLocaleString()} emails / month</span>
+                      <span>{(p.monthly_email_limit || 0).toLocaleString()} emails a month</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
+                      <span style={{ color: '#10b981' }}>✓</span>
+                      <span>{p.rate_limit_per_sec || 50} requests per second</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
                       <span style={{ color: '#10b981' }}>✓</span>
@@ -256,15 +260,11 @@ export function ClientPlan() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
                       <span style={{ color: '#10b981' }}>✓</span>
-                      <span>{p.rate_limit_per_sec || 50} requests / sec throughput</span>
+                      <span>Priority sending</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
                       <span style={{ color: '#10b981' }}>✓</span>
-                      <span>Zero-message-loss queueing & retries</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
-                      <span style={{ color: '#10b981' }}>✓</span>
-                      <span>Self-service API keys (up to 5 active)</span>
+                      <span>Email support</span>
                     </div>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export function ClientPlan() {
                       disabled
                       style={{ width: '100%', cursor: 'default', opacity: 0.8 }}
                     >
-                      Current Plan
+                      Current plan
                     </button>
                   ) : (
                     <button
@@ -285,7 +285,7 @@ export function ClientPlan() {
                       disabled={switchingId === p.id}
                       style={{ width: '100%' }}
                     >
-                      {switchingId === p.id ? 'Switching...' : `Switch to ${p.name}`}
+                      {switchingId === p.id ? 'Activating...' : `Choose ${p.name}`}
                     </button>
                   )}
                 </div>

@@ -472,4 +472,11 @@ def get_system_settings() -> dict:
         "from_email": getattr(settings, "FROM_EMAIL", None) or "no-reply@notifyhub.local",
         "worker_concurrency": getattr(settings, "WORKER_CONCURRENCY", 2),
         "log_level": getattr(settings, "LOG_LEVEL", "INFO"),
+        "smtp_host": getattr(settings, "SMTP_HOST", "smtp.example.com"),
+        "smtp_port": getattr(settings, "SMTP_PORT", 587),
+        "from_address": getattr(settings, "FROM_EMAIL", None) or getattr(settings, "SMTP_FROM", "no-reply@notifyhub.example"),
+        "requests_per_sec": getattr(settings, "DEFAULT_RATE_LIMIT_PER_SEC", 50),
+        "sending_speed": getattr(settings, "OUTGOING_RATE_PER_SEC", 20),
+        "retry_after": "5s, 10s, 20s, 40s",
+        "maintenance_mode": False,
     }

@@ -64,3 +64,39 @@ def ensure_default_admin(db_session):
         db_session.add(admin)
         db_session.commit()
     return admin
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clean_db_after_test_session():
+    """Teardown fixture that purges test-created clients and extra plans after test session completes."""
+    yield
+    session = SessionLocal()
+    try:
+        from app.models import (
+            Delivery,
+            NotificationEvent,
+            EventTypeSetting,
+            Template,
+            Recipient,
+            ApiKey,
+            User,
+            AuditLog,
+            Client,
+            Plan,
+        )
+        session.query(Delivery).delete()
+        session.query(NotificationEvent).delete()
+        session.query(EventTypeSetting).delete()
+        session.query(Template).delete()
+        session.query(Recipient).delete()
+        session.query(ApiKey).delete()
+        session.query(User).filter(User.client_id.isnot(None)).delete()
+        session.query(AuditLog).filter(AuditLog.client_id.isnot(None)).delete()
+        session.query(Client).delete()
+        session.query(Plan).filter(~Plan.name.in_(["Starter", "Growth", "Scale"])).delete()
+        session.commit()
+    except Exception:
+        session.rollback()
+    finally:
+        session.close()
+
