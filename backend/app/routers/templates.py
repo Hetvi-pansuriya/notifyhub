@@ -9,6 +9,7 @@ from app.deps import get_current_client
 from app.models import Client
 from app.schemas.templates import (
     TemplateCreate,
+    TemplateUpdate,
     TemplatePreview,
     TemplatePreviewResponse,
     TemplateResponse,
@@ -135,4 +136,24 @@ def activate_template(
         db=db,
         client_id=current_client.id,
         template_id=template_id,
+    )
+
+
+@router.patch(
+    "/{template_id}",
+    response_model=TemplateResponse,
+    summary="Update an existing template",
+    description="Updates subject/body or status of a template.",
+)
+def update_template(
+    template_id: uuid.UUID,
+    data: TemplateUpdate,
+    current_client: Client = Depends(get_current_client),
+    db: Session = Depends(get_db),
+):
+    return mgmt_service.update_template(
+        db=db,
+        client_id=current_client.id,
+        template_id=template_id,
+        data=data,
     )

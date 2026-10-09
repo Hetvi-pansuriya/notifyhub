@@ -107,27 +107,53 @@ def signup(
     db.add(client)
     db.flush()
 
-    # Seed default starter event type setting and active template (welcome_email)
+    # Seed standard starter event types and templates
     from app.models import EventTypeSetting, Template
-    default_setting = EventTypeSetting(
-        client_id=client.id,
-        event_type="welcome_email",
-        priority=1,
-        retry_schedule=[60, 300, 900],
-        respect_opt_out=True,
-        sensitive=False,
-    )
-    db.add(default_setting)
+    core_settings = [
+        EventTypeSetting(client_id=client.id, event_type="otp", priority=2, ttl_seconds=300, retry_schedule=[2, 5], respect_opt_out=False, sensitive=True),
+        EventTypeSetting(client_id=client.id, event_type="password_reset", priority=2, ttl_seconds=900, retry_schedule=[5, 10], respect_opt_out=False, sensitive=True),
+        EventTypeSetting(client_id=client.id, event_type="welcome_email", priority=1, ttl_seconds=None, retry_schedule=[5, 10, 20], respect_opt_out=True, sensitive=False),
+        EventTypeSetting(client_id=client.id, event_type="report_email", priority=0, ttl_seconds=172800, retry_schedule=[60, 300], respect_opt_out=True, sensitive=False),
+    ]
+    for s in core_settings:
+        db.add(s)
 
-    default_template = Template(
-        client_id=client.id,
-        event_type="welcome_email",
-        version=1,
-        subject="Welcome, {{ name }}!",
-        body="Hello {{ name }},\n\nWelcome to our platform! We are delighted to have you on board.",
-        status="active",
-    )
-    db.add(default_template)
+    core_templates = [
+        Template(
+            client_id=client.id,
+            event_type="otp",
+            version=1,
+            subject="Your OTP code is {{ otp_code }}",
+            body="Hello {{ name }},\n\nYour one-time verification code is {{ otp_code }}. This code will expire in 5 minutes.\n\nDo not share this code with anyone.",
+            status="active",
+        ),
+        Template(
+            client_id=client.id,
+            event_type="welcome_email",
+            version=1,
+            subject="Welcome to {{ app_name }}, {{ name }}!",
+            body="Hello {{ name }},\n\nWelcome to {{ app_name }}! We are delighted to have you on board.",
+            status="active",
+        ),
+        Template(
+            client_id=client.id,
+            event_type="report_email",
+            version=1,
+            subject="{{ report_title }} for {{ period }}",
+            body="Hello {{ name }},\n\nYour scheduled {{ report_title }} for {{ period }} is ready.\n\nSummary:\n{{ summary }}\n\nBest regards,\nYour Operations Team",
+            status="active",
+        ),
+        Template(
+            client_id=client.id,
+            event_type="password_reset",
+            version=1,
+            subject="Reset your password",
+            body="Hello {{ name }},\n\nClick the link below to reset your password:\n{{ reset_url }}\n\nThis link expires in 15 minutes.",
+            status="draft",
+        ),
+    ]
+    for t in core_templates:
+        db.add(t)
 
     pw_hash = hash_password(data.password)
     user = User(

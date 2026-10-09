@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -10,6 +10,12 @@ class TemplateCreate(BaseModel):
     event_type: str = Field(..., min_length=1, max_length=100, description="Target event type name")
     subject: str = Field(..., min_length=1, description="Jinja2 template for email subject")
     body: str = Field(..., min_length=1, description="Jinja2 template for email body")
+
+
+class TemplateUpdate(BaseModel):
+    subject: Optional[str] = None
+    body: Optional[str] = None
+    status: Optional[str] = None
 
 
 class TemplatePreview(BaseModel):

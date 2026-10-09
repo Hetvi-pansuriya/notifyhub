@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import EventTypeSetting, NotificationEvent, Preference, Recipient, Template
 from app.schemas.event_types import EventTypeSettingUpsert
 from app.schemas.recipients import RecipientResponse, RecipientUpsert
-from app.schemas.templates import TemplateCreate
+from app.schemas.templates import TemplateCreate, TemplateUpdate
 from app.services.rendering import render
 
 
@@ -211,13 +211,50 @@ def create_template_draft(
 
 
 def list_templates(db: Session, client_id: uuid.UUID) -> list[Template]:
-    """Lists all templates and versions for this client tenant."""
-    return (
+    """Lists all templates and versions for this client tenant, seeding clean defaults if none exist."""
+    existing = (
         db.query(Template)
         .filter(Template.client_id == client_id)
         .order_by(Template.event_type.asc(), Template.version.desc())
         .all()
     )
+    if not existing:
+        core_templates = [
+            {
+                "event_type": "otp",
+                "version": 1,
+                "subject": "Your OTP code is {{ otp_code }}",
+                "body": "Hello {{ name }},\n\nYour one-time verification code is {{ otp_code }}. This code will expire in 5 minutes.\n\nDo not share this code with anyone.",
+                "status": "active",
+            },
+            {
+                "event_type": "welcome_email",
+                "version": 1,
+                "subject": "Welcome to {{ app_name }}, {{ name }}!",
+                "body": "Hello {{ name }},\n\nWelcome to {{ app_name }}! We are delighted to have you on board. Let us know if you need any assistance.",
+                "status": "active",
+            },
+            {
+                "event_type": "report_email",
+                "version": 1,
+                "subject": "{{ report_title }} for {{ period }}",
+                "body": "Hello {{ name }},\n\nYour scheduled {{ report_title }} for {{ period }} is ready.\n\nSummary:\n{{ summary }}\n\nBest regards,\nYour Operations Team",
+                "status": "active",
+            },
+            {
+                "event_type": "password_reset",
+                "version": 1,
+                "subject": "Reset your password",
+                "body": "Hello {{ name }},\n\nClick the link below to reset your password:\n{{ reset_url }}\n\nThis link expires in 15 minutes.",
+                "status": "draft",
+            },
+        ]
+        for tmpl_data in core_templates:
+            t = Template(client_id=client_id, **tmpl_data)
+            db.add(t)
+            existing.append(t)
+        db.commit()
+    return sorted(existing, key=lambda t: (t.event_type, -t.version))
 
 
 def preview_template(
@@ -257,6 +294,43 @@ def activate_template(
     return template
 
 
+def update_template(
+    db: Session,
+    client_id: uuid.UUID,
+    template_id: uuid.UUID,
+    data: TemplateUpdate,
+) -> Template:
+    """Updates subject/body of a template, or activates it in one transaction."""
+    template = (
+        db.query(Template)
+        .filter(Template.client_id == client_id, Template.id == template_id)
+        .first()
+    )
+    if template is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Template not found",
+        )
+
+    if data.subject is not None:
+        template.subject = data.subject
+    if data.body is not None:
+        template.body = data.body
+    if data.status is not None:
+        if data.status == "active":
+            db.query(Template).filter(
+                Template.client_id == client_id,
+                Template.event_type == template.event_type,
+                Template.status == "active",
+                Template.id != template.id,
+            ).update({"status": "archived"}, synchronize_session=False)
+        template.status = data.status
+
+    db.commit()
+    db.refresh(template)
+    return template
+
+
 # =====================================================================
 # EVENT TYPE SETTINGS
 # =====================================================================
@@ -264,13 +338,35 @@ def activate_template(
 def list_event_type_settings(
     db: Session, client_id: uuid.UUID
 ) -> list[EventTypeSetting]:
-    """Lists all event type settings for this client tenant, discovering any from templates or events."""
+    """Lists all event type settings for this client tenant, ensuring core types and discovering any from templates."""
     existing_settings = (
         db.query(EventTypeSetting)
         .filter(EventTypeSetting.client_id == client_id)
         .all()
     )
     existing_types = {s.event_type for s in existing_settings}
+
+    core_defaults = [
+        {"event_type": "otp", "priority": 2, "ttl_seconds": 300, "retry_schedule": [2, 5], "respect_opt_out": False, "sensitive": True},
+        {"event_type": "password_reset", "priority": 2, "ttl_seconds": 900, "retry_schedule": [5, 10], "respect_opt_out": False, "sensitive": True},
+        {"event_type": "welcome_email", "priority": 1, "ttl_seconds": None, "retry_schedule": [5, 10, 20], "respect_opt_out": True, "sensitive": False},
+        {"event_type": "report_email", "priority": 0, "ttl_seconds": 172800, "retry_schedule": [60, 300], "respect_opt_out": True, "sensitive": False},
+    ]
+
+    for item in core_defaults:
+        if item["event_type"] not in existing_types:
+            new_s = EventTypeSetting(
+                client_id=client_id,
+                event_type=item["event_type"],
+                priority=item["priority"],
+                ttl_seconds=item["ttl_seconds"],
+                retry_schedule=item["retry_schedule"],
+                respect_opt_out=item["respect_opt_out"],
+                sensitive=item["sensitive"],
+            )
+            db.add(new_s)
+            existing_settings.append(new_s)
+            existing_types.add(item["event_type"])
 
     # Discover other event types from templates
     template_types = (
@@ -317,7 +413,7 @@ def list_event_type_settings(
     if db.dirty:
         db.commit()
 
-    return sorted(existing_settings, key=lambda s: s.event_type)
+    return sorted(existing_settings, key=lambda s: (-s.priority, s.event_type))
 
 
 def upsert_event_type_setting(
