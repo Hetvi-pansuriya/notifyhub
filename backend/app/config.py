@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@notifyhub.local"
     ADMIN_PASSWORD: str = "AdminSecretPass123!"
 
+    # Attachment Configuration
+    ATTACHMENT_MAX_COUNT: int = 3
+    ATTACHMENT_MAX_TOTAL_MB: int = 5
+    ATTACHMENT_ALLOWED_TYPES: str = "application/pdf"
+    ATTACHMENT_RETENTION_DAYS: int = 7
+
     @model_validator(mode="after")
     def validate_sendgrid_config(self) -> "Settings":
         if self.MAIL_PROVIDER.lower() == "sendgrid":
