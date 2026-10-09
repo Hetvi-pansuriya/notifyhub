@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     MAIL_PROVIDER: str = "smtp"
     SENDGRID_API_KEY: Optional[str] = None
     FROM_EMAIL: Optional[str] = None
-    GLOBAL_DAILY_LIMIT: int = 300
+    GLOBAL_DAILY_LIMIT: int = 90
     DEMO_ALLOWED_RECIPIENTS: Optional[str] = None
 
     # Plan Configuration

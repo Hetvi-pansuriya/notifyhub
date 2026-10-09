@@ -1,14 +1,22 @@
 # NotifyHub Developer Guidelines and Architecture Rules
 
-NotifyHub is a backend-first email notification platform with self-service console management and API key automation.
+NotifyHub is a generic, backend-first multi-tenant email notification service with self-service console management and API key automation.
 
 ## Workspace Layout
-- `backend/`: FastAPI application, SQLAlchemy 2.x, PostgreSQL, Alembic migrations, Background worker, MailHog SMTP.
+- `backend/`: FastAPI application, SQLAlchemy 2.x, PostgreSQL 16, Alembic migrations, background queue worker, MailHog SMTP.
+  - `app/routers/`: Modular route handlers (`events.py`, `console_auth.py`, `console_keys.py`, `console_client.py`, `admin.py`, etc.).
+  - `app/services/`: Intake, delivery processing, stats calculations, rate limiting, and plan enforcement.
+  - `app/models.py`: SQLAlchemy database models (`User`, `Session`, `ApiKey`, `Client`, `Plan`, `Delivery`, `NotificationEvent`, etc.).
+  - `worker/`: Background worker process (`worker.main`) using PostgreSQL `FOR UPDATE SKIP LOCKED`, lock reaper, and pluggable providers (`MailHog`, `SendGrid`).
+  - `tests/`: Feature-focused automated test suites (`test_auth.py`, `test_api_keys.py`, `test_events.py`, `test_scheduling.py`, `test_limits.py`, `test_plans.py`, `test_stats.py`, `test_admin.py`, `test_sendgrid_provider.py`, `test_worker.py`, `test_console_client.py`, `test_step5_smoke.py`).
 - `frontend/`: React + Vite SPA using Vanilla CSS and custom router. Zero external UI dependencies.
+  - `src/pages/client/`: Tenant owner portal pages (`Dashboard.jsx`, `Deliveries.jsx`, `Templates.jsx`, `ApiKeys.jsx`, `Profile.jsx`).
+  - `src/pages/admin/`: Platform administrator portal pages (`AdminOverview.jsx`, `AdminClients.jsx`, `AdminClientDetail.jsx`, `AdminPlans.jsx`).
+  - `src/components/`: Reusable primitives (`Sidebar.jsx`, `Topbar.jsx`, `Layout.jsx`, `Toast.jsx`, `PageShell.jsx`).
 
 ## Architecture and Credential Model
 
-NotifyHub maintains two strictly separated types of credentials:
+NotifyHub maintains three strictly separated types of credentials:
 
 ### 1. Person Console Sessions (Browser)
 - **Authentication**: Email + Argon2id password (`POST /console/auth/login`, `POST /console/auth/signup`).
@@ -30,6 +38,12 @@ NotifyHub maintains two strictly separated types of credentials:
 - **Header**: `X-Admin-Key: <ADMIN_KEY>`
 - Used for machine access to `/admin/*` endpoints.
 
+## Mail Delivery Architecture
+- **MailHog (SMTP)**: Default provider for local development (`MAIL_PROVIDER=smtp`, port 1025, inbox on 8025).
+- **SendGrid**: Enabled via `MAIL_PROVIDER=sendgrid`, `SENDGRID_API_KEY`, and `FROM_EMAIL`.
+- **Daily Limits**: Capped globally by `GLOBAL_DAILY_LIMIT=90` (SendGrid free-tier safety margin).
+- **Privacy Guarantee**: SendGrid keys, email subjects, bodies, and OTP data are never written to application logs.
+
 ## Design Aesthetic (Google AI Studio Inspired)
 - **Palette**: Dark background (`#0b0b0c`), dark cards (`#141415`), borders (`#232325`), typography (`DM Sans`).
 - **Accent Philosophy**: Colors are strictly reserved for status indicators:
@@ -40,6 +54,8 @@ NotifyHub maintains two strictly separated types of credentials:
 - **Shapes**: Pill buttons (`border-radius: 99px`), modern cards (`border-radius: 18px`).
 - **Dependencies**: Pure React, native fetch client with credentials, custom history router. No Tailwind, Axios, Lucide, or external UI libraries.
 
-## Testing & Quality
-- Run tests: `docker compose exec api pytest` (54/54 passing).
-- Run seed: `docker compose exec api python scripts/seed.py`.
+## Testing & Commands
+- **Run Backend Tests**: `docker compose exec api pytest`
+- **Seed Admin User**: `docker compose exec api python scripts/seed.py`
+- **Build Frontend**: `cd frontend && npm run build`
+- **Run Frontend Dev**: `cd frontend && npm run dev`

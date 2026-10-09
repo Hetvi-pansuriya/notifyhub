@@ -1,5 +1,6 @@
 """Event intake and inspection API endpoints."""
 
+from typing import Optional
 import uuid
 from fastapi import APIRouter, Depends, Header, Response, status
 from sqlalchemy.orm import Session
@@ -26,20 +27,19 @@ router = APIRouter(
 def create_event(
     event_data: EventCreate,
     response: Response,
-    idempotency_key: str = Header(
-        ...,
+    idempotency_key: Optional[str] = Header(
+        None,
         alias="Idempotency-Key",
-        min_length=1,
-        max_length=255,
         description="Unique idempotency key per event dispatch",
     ),
     current_client: Client = Depends(get_current_client),
     db: Session = Depends(get_db),
 ):
+    actual_idempotency_key = idempotency_key or str(uuid.uuid4())
     intake_resp, status_code = intake_service.process_event_intake(
         db=db,
         client_id=current_client.id,
-        idempotency_key=idempotency_key,
+        idempotency_key=actual_idempotency_key,
         event_data=event_data,
     )
     response.status_code = status_code

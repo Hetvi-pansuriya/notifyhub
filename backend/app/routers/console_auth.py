@@ -107,6 +107,28 @@ def signup(
     db.add(client)
     db.flush()
 
+    # Seed default starter event type setting and active template (welcome_email)
+    from app.models import EventTypeSetting, Template
+    default_setting = EventTypeSetting(
+        client_id=client.id,
+        event_type="welcome_email",
+        priority=1,
+        retry_schedule=[60, 300, 900],
+        respect_opt_out=True,
+        sensitive=False,
+    )
+    db.add(default_setting)
+
+    default_template = Template(
+        client_id=client.id,
+        event_type="welcome_email",
+        version=1,
+        subject="Welcome, {{ name }}!",
+        body="Hello {{ name }},\n\nWelcome to our platform! We are delighted to have you on board.",
+        status="active",
+    )
+    db.add(default_template)
+
     pw_hash = hash_password(data.password)
     user = User(
         client_id=client.id,
