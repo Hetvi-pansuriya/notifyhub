@@ -456,8 +456,15 @@ def get_system_health(db: Session) -> dict:
     }
 
 
-def get_system_settings() -> dict:
+def get_system_settings(db: Optional[Session] = None) -> dict:
     """Returns non-secret platform settings."""
+    m_mode = False
+    if db is not None:
+        from app.models import SystemStatus
+        st = db.query(SystemStatus).filter(SystemStatus.key == "maintenance_mode").first()
+        if st and st.value:
+            m_mode = (st.value.lower() == "true")
+
     return {
         "mail_provider": settings.MAIL_PROVIDER,
         "sendgrid_api_key_configured": bool(getattr(settings, "SENDGRID_API_KEY", None)),
@@ -478,5 +485,5 @@ def get_system_settings() -> dict:
         "requests_per_sec": getattr(settings, "DEFAULT_RATE_LIMIT_PER_SEC", 50),
         "sending_speed": getattr(settings, "OUTGOING_RATE_PER_SEC", 20),
         "retry_after": "5s, 10s, 20s, 40s",
-        "maintenance_mode": False,
+        "maintenance_mode": m_mode,
     }

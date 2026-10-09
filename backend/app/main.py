@@ -97,3 +97,18 @@ def health_check(db: Session = Depends(get_db)):
         "status": app_status,
         "database": db_status,
     }
+
+
+@app.get("/console/system/status", tags=["System"])
+@app.get("/api/system/status", tags=["System"])
+def get_public_system_status(db: Session = Depends(get_db)):
+    """Returns platform operational and maintenance status for clients."""
+    from app.models import SystemStatus
+    st = db.query(SystemStatus).filter(SystemStatus.key == "maintenance_mode").first()
+    maintenance_mode = (st.value.lower() == "true") if st and st.value else False
+    return {
+        "maintenance_mode": maintenance_mode,
+        "status": "maintenance" if maintenance_mode else "operational",
+        "message": "Platform maintenance is currently active. New email queueing is temporarily paused while upgrades are in progress.",
+    }
+

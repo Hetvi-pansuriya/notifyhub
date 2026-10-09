@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Optional
 import uuid
+from app.config import settings
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
@@ -56,8 +57,8 @@ def get_health(db: Session = Depends(get_db)):
 
 
 @router.get("/settings", summary="Read-only platform configuration")
-def get_settings():
-    return admin_service.get_system_settings()
+def get_settings(db: Session = Depends(get_db)):
+    return admin_service.get_system_settings(db)
 
 
 class SettingsUpdateRequest(BaseModel):
@@ -72,6 +73,7 @@ class SettingsUpdateRequest(BaseModel):
 
 @router.patch("/settings", summary="Update platform settings")
 def update_settings(data: SettingsUpdateRequest, db: Session = Depends(get_db)):
+    from app.models import SystemStatus
     if data.requests_per_sec is not None:
         settings.DEFAULT_RATE_LIMIT_PER_SEC = data.requests_per_sec
     if data.sending_speed is not None:
@@ -83,7 +85,15 @@ def update_settings(data: SettingsUpdateRequest, db: Session = Depends(get_db)):
     if data.from_address is not None:
         settings.FROM_EMAIL = data.from_address
         settings.SMTP_FROM = data.from_address
-    return admin_service.get_system_settings()
+    if data.maintenance_mode is not None:
+        st = db.query(SystemStatus).filter(SystemStatus.key == "maintenance_mode").first()
+        if not st:
+            st = SystemStatus(key="maintenance_mode", value="true" if data.maintenance_mode else "false")
+            db.add(st)
+        else:
+            st.value = "true" if data.maintenance_mode else "false"
+        db.commit()
+    return admin_service.get_system_settings(db)
 
 
 @router.post("/settings/rotate-admin-key", summary="Rotate platform admin key")

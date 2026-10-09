@@ -9,6 +9,7 @@ export function AdminSettings() {
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
   // Form Fields matching mockup 16_admin_settings.png
   const [requestsPerSec, setRequestsPerSec] = useState('50')
@@ -59,6 +60,7 @@ export function AdminSettings() {
     if (e) e.preventDefault()
     setSaving(true)
     setSaveSuccess(false)
+    setSaveError(null)
     try {
       await request('/admin/settings', {
         method: 'PATCH',
@@ -75,7 +77,7 @@ export function AdminSettings() {
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 4000)
     } catch (err) {
-      alert(`Failed to save settings: ${err.message}`)
+      setSaveError(err.message || 'Failed to save settings')
     } finally {
       setSaving(false)
     }
@@ -172,6 +174,11 @@ export function AdminSettings() {
           {saveSuccess && (
             <span style={{ fontSize: '13px', color: '#10b981', fontWeight: 500 }}>
               ✓ Settings saved
+            </span>
+          )}
+          {saveError && (
+            <span style={{ fontSize: '13px', color: '#ef4444', fontWeight: 500 }}>
+              ✕ {saveError}
             </span>
           )}
           <button
