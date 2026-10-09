@@ -83,6 +83,31 @@ GLOBAL_DAILY_LIMIT=90
 
 ---
 
+## Attachments
+
+NotifyHub supports sending PDF attachments with transactional emails (e.g. sending reports, invoices, or statements via `POST /api/events`).
+
+### Request Fields
+The `POST /api/events` payload accepts an optional `attachments` array. Each attachment object includes:
+- `filename`: String (1 to 100 characters, no path separators, control characters, or line breaks).
+- `content_type`: MIME type (must be in `ATTACHMENT_ALLOWED_TYPES`, e.g. `application/pdf`).
+- `content_base64`: Strict base64-encoded file content (for PDF, decoded bytes must begin with `%PDF-`).
+
+### Limits & Configuration Settings
+Attachment behavior is controlled by environment variables in `.env`:
+- `ATTACHMENT_MAX_COUNT`: Maximum number of attachments per event (default: `3`).
+- `ATTACHMENT_MAX_TOTAL_MB`: Maximum total decoded size of all attachments (default: `5` MB). Requests exceeding this limit return `422`. Oversized HTTP requests (Content-Length exceeding `ATTACHMENT_MAX_TOTAL_MB * 1.4 + 1 MB`) are rejected early with `413 Payload Too Large`.
+- `ATTACHMENT_ALLOWED_TYPES`: Comma-separated list of allowed MIME types (default: `application/pdf`).
+- `ATTACHMENT_RETENTION_DAYS`: Retention period in days for storing attachment bytes on dead deliveries (default: `7`).
+
+### Security & Storage Lifecycle
+- **Sensitive Email Restriction:** Sensitive event types (such as password resets or OTPs) refuse attachments with `422 Unprocessable Entity` ("Sensitive emails cannot have attachments").
+- **Automatic Deletion After Sending:** Once a delivery is successfully sent or expires, the attachment file bytes are automatically set to `NULL` (deleted) to minimize storage, while preserving metadata (`filename`, `size_bytes`) for audit history.
+- **Dead Deliveries & Retention Purge:** Dead deliveries retain attachment bytes to allow manual retry (`POST /api/deliveries/{id}/retry`). If retried after bytes have been purged by the background reaper following `ATTACHMENT_RETENTION_DAYS`, the retry returns `409` ("The attachment has expired. Send a new event.").
+- **Privacy & Logging:** File contents and filenames are never logged; only delivery IDs, attachment count, and total size in bytes are recorded.
+
+---
+
 ## Key API Endpoints
 
 All requests to `/api/*` require an `X-API-Key: nh_live_<token>` header. Non-GET requests to `/console/*` require the CSRF header `X-Requested-With: notifyhub-console`.
