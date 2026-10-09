@@ -8,25 +8,25 @@ import { Login } from './pages/Login'
 import { Signup } from './pages/Signup'
 import { NotFound } from './pages/NotFound'
 
-// Client Views (Full Real Interactive Views)
-import { ClientDashboard } from './views/client/ClientDashboard'
-import { ClientDeliveries } from './views/client/ClientDeliveries'
-import { ClientTemplates } from './views/client/ClientTemplates'
-import { ClientEventTypes } from './views/client/ClientEventTypes'
-import { ClientRecipients } from './views/client/ClientRecipients'
-import { ClientUsage } from './views/client/ClientUsage'
-import { ApiKeys } from './pages/client/ApiKeys' // Full Self-Service API Keys manager
-import { ClientPlan } from './views/client/ClientPlan'
-import { ClientProfile } from './views/client/ClientProfile'
+// Client Pages
+import { ClientDashboard } from './pages/client/ClientDashboard'
+import { ClientDeliveries } from './pages/client/ClientDeliveries'
+import { ClientTemplates } from './pages/client/ClientTemplates'
+import { ClientEventTypes } from './pages/client/ClientEventTypes'
+import { ClientRecipients } from './pages/client/ClientRecipients'
+import { ClientUsage } from './pages/client/ClientUsage'
+import { ApiKeys } from './pages/client/ApiKeys'
+import { ClientPlan } from './pages/client/ClientPlan'
+import { ClientProfile } from './pages/client/ClientProfile'
 
-// Admin Views (Full Real Interactive Views)
-import { AdminOverview } from './views/admin/AdminOverview'
-import { AdminClients } from './views/admin/AdminClients'
-import { AdminClientDetail } from './views/admin/AdminClientDetail'
-import { AdminPlans } from './views/admin/AdminPlans'
-import { AdminSystemHealth } from './views/admin/AdminSystemHealth'
-import { AdminAuditLog } from './views/admin/AdminAuditLog'
-import { AdminSettings } from './views/admin/AdminSettings'
+// Admin Pages
+import { AdminOverview } from './pages/admin/AdminOverview'
+import { AdminClients } from './pages/admin/AdminClients'
+import { AdminClientDetail } from './pages/admin/AdminClientDetail'
+import { AdminPlans } from './pages/admin/AdminPlans'
+import { AdminSystemHealth } from './pages/admin/AdminSystemHealth'
+import { AdminAuditLog } from './pages/admin/AdminAuditLog'
+import { AdminSettings } from './pages/admin/AdminSettings'
 
 // Global Modals
 import { DeliveryDetailModal } from './components/DeliveryDetailModal'
