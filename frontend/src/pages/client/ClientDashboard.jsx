@@ -55,7 +55,7 @@ export function ClientDashboard({ onOpenDeliveryModal }) {
         const [sumRes, serRes, failRes] = await Promise.all([summaryPromise, seriesPromise, failedPromise])
 
         setSummary(sumRes || {})
-        setSeriesData(serRes?.series || [])
+        setSeriesData(Array.isArray(serRes) ? serRes : (serRes?.series || []))
         setFailedDeliveries(failRes?.items || [])
         setLoading(false)
       } catch (err) {

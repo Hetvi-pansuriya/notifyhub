@@ -65,7 +65,7 @@ export function ClientUsage({ clientId = null, onNavigateToPlans }) {
       ])
 
       setSummary(sumRes || {})
-      setSeriesData(serRes?.series || [])
+      setSeriesData(Array.isArray(serRes) ? serRes : (serRes?.series || []))
       setRateData(rateRes || [])
 
       if (clientId) {

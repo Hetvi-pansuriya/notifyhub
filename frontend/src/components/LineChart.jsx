@@ -176,6 +176,46 @@ export function LineChart({
           )
         })}
 
+        {/* X-axis time labels */}
+        {(() => {
+          if (pointsData.length <= 1) return null
+          const step = Math.max(1, Math.floor(pointsData.length / 5))
+          const indices = []
+          for (let i = 0; i < pointsData.length; i += step) {
+            indices.push(i)
+          }
+          if (indices[indices.length - 1] !== pointsData.length - 1) {
+            indices.push(pointsData.length - 1)
+          }
+          return indices.map((idx) => {
+            const rawLabel = pointsData[idx]?.label
+            let text = ''
+            try {
+              const d = new Date(rawLabel)
+              if (!isNaN(d.getTime())) {
+                text = d.getHours() !== 0 || d.getMinutes() !== 0 ? formatTime(rawLabel) : formatDate(rawLabel)
+              } else {
+                text = String(rawLabel).slice(0, 10)
+              }
+            } catch {
+              text = String(rawLabel).slice(0, 10)
+            }
+            return (
+              <text
+                key={idx}
+                x={getX(idx)}
+                y={height - 8}
+                fill="#585f73"
+                fontSize="10"
+                textAnchor={idx === 0 ? 'start' : idx === pointsData.length - 1 ? 'end' : 'middle'}
+                fontFamily="sans-serif"
+              >
+                {text}
+              </text>
+            )
+          })
+        })()}
+
         {/* Filled Area */}
         {areaD && <path d={areaD} fill="url(#lineAreaGrad)" />}
 

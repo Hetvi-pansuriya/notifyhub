@@ -49,7 +49,7 @@ export function AdminOverview({ onSelectClient }) {
       ])
 
       setOverview(ovRes || {})
-      setSeriesData(serRes?.series || [])
+      setSeriesData(Array.isArray(serRes) ? serRes : (serRes?.series || []))
 
       // Sort clients by sent_today descending
       const sorted = [...(clRes || [])].sort((a, b) => (b.sent_today || 0) - (a.sent_today || 0))
@@ -305,7 +305,7 @@ export function AdminOverview({ onSelectClient }) {
                       {c.name}
                     </td>
                     <td style={{ padding: '12px', color: 'var(--text-secondary, #8c93a7)' }}>
-                      {c.plan_name || 'Starter'}
+                      {c.plan_name || c.plan || 'Starter'}
                     </td>
                     <td style={{ padding: '12px', color: '#ffffff', fontWeight: 500 }}>
                       {(c.sent_today || 0).toLocaleString()}

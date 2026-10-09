@@ -14,14 +14,14 @@ class Settings(BaseSettings):
     HMAC_SECRET: str = "notifyhub_hmac_secret_token_67890"
 
     # SMTP Configuration
-    SMTP_HOST: str = "mailhog"
+    SMTP_HOST: str = "localhost"
     SMTP_PORT: int = 1025
-    SMTP_FROM: str = "no-reply@notifyhub.local"
+    SMTP_FROM: str = "notifyhub123@gmail.com"
 
     # Mail Provider Configuration
-    MAIL_PROVIDER: str = "smtp"
+    MAIL_PROVIDER: str = "sendgrid"
     SENDGRID_API_KEY: Optional[str] = None
-    FROM_EMAIL: Optional[str] = None
+    FROM_EMAIL: Optional[str] = "notifyhub123@gmail.com"
     GLOBAL_DAILY_LIMIT: int = 90
     DEMO_ALLOWED_RECIPIENTS: Optional[str] = None
 

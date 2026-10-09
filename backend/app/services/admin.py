@@ -76,28 +76,24 @@ def list_clients_table(
             owner = c.users[0]
         owner_email = owner.email if owner else None
 
-        emails_month = (
-            db.query(Delivery)
-            .filter(
-                Delivery.client_id == c.id,
-                Delivery.created_at >= month_start,
-                Delivery.status != "skipped",
-            )
-            .count()
-        )
+        sent_month, sent_today = get_client_month_and_day_usage(db, c.id)
         failed_now = (
             db.query(Delivery)
             .filter(Delivery.client_id == c.id, Delivery.status == "dead")
             .count()
         )
 
+        plan_name = c.plan.name if c.plan else "None"
         result.append({
             "id": c.id,
             "name": c.name,
             "owner_email": owner_email,
-            "plan": c.plan.name if c.plan else "None",
+            "plan": plan_name,
+            "plan_name": plan_name,
             "status": c.status,
-            "emails_this_month": emails_month,
+            "emails_this_month": sent_month,
+            "sent_this_month": sent_month,
+            "sent_today": sent_today,
             "monthly_email_limit": c.plan.monthly_email_limit if c.plan else 10000,
             "failed_now": failed_now,
             "created_at": c.created_at,

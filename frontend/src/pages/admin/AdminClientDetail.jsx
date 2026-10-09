@@ -56,7 +56,7 @@ export function AdminClientDetail({ clientId, client: initialClient, onBack }) {
       setClient(cRes)
       setPlans(pRes || [])
       setSelectedPlanId(cRes.plan_id || '')
-      setDailySeries(serRes?.series || [])
+      setDailySeries(Array.isArray(serRes) ? serRes : (serRes?.series || []))
       setLoading(false)
     } catch (err) {
       setError(err.message || 'Failed to load client details')

@@ -27,11 +27,11 @@ export function AdminSystemHealth() {
         request('/health').catch(() => ({ status: 'healthy', database: 'connected' })),
         request(
           `/admin/stats/series?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}&bucket=hour&metric=sent&tz=${encodeURIComponent(userTimezone)}`
-        ).catch(() => ({ series: [] })),
+        ).catch(() => []),
       ])
       setHealth(hRes)
       setDbStatus(rootHealth?.database === 'connected' ? 'connected' : 'degraded')
-      setSeriesData(sRes?.series || [])
+      setSeriesData(Array.isArray(sRes) ? sRes : (sRes?.series || []))
       setLoading(false)
     } catch (err) {
       if (!silent) {
