@@ -230,6 +230,7 @@ export function AdminSettings() {
               value={requestsPerSec}
               onChange={(e) => setRequestsPerSec(e.target.value)}
               placeholder="50"
+              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
             />
           </div>
 
@@ -243,6 +244,7 @@ export function AdminSettings() {
               value={sendingSpeed}
               onChange={(e) => setSendingSpeed(e.target.value)}
               placeholder="20"
+              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
             />
           </div>
 
@@ -256,6 +258,7 @@ export function AdminSettings() {
               value={retryAfter}
               onChange={(e) => setRetryAfter(e.target.value)}
               placeholder="5s, 10s, 20s, 40s"
+              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
             />
           </div>
         </div>
@@ -286,6 +289,7 @@ export function AdminSettings() {
               value={host}
               onChange={(e) => setHost(e.target.value)}
               placeholder="smtp.example.com"
+              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
             />
           </div>
 
@@ -299,6 +303,7 @@ export function AdminSettings() {
               value={port}
               onChange={(e) => setPort(e.target.value)}
               placeholder="587"
+              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
             />
           </div>
 
@@ -312,6 +317,7 @@ export function AdminSettings() {
               value={fromAddress}
               onChange={(e) => setFromAddress(e.target.value)}
               placeholder="no-reply@notifyhub.example"
+              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
             />
           </div>
         </div>
@@ -518,7 +524,7 @@ export function AdminSettings() {
                   placeholder="admin@example.com"
                   value={testRecipient}
                   onChange={(e) => setTestRecipient(e.target.value)}
-                  style={{ flex: 1, fontSize: '13px' }}
+                  style={{ flex: 1, fontSize: '13px', backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
                   required
                 />
                 <button

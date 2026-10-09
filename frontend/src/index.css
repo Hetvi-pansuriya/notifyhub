@@ -74,14 +74,54 @@ body {
   background: #31374a;
 }
 
-/* Form inputs & buttons reset */
-input, textarea, select, button {
+/* Form inputs & buttons reset and base styling */
+input, textarea, select {
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
+  color: #ffffff;
+  background-color: #0b0d13;
+  border: 1px solid var(--border-input, #232836);
+  border-radius: var(--radius-sm, 8px);
+  padding: 10px 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--border-focus, #3b82f6);
+  background-color: #0f121a;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted, #585f73);
+}
+
+.input-field, .form-input {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: #0b0d13;
+  border: 1px solid var(--border-input, #232836);
+  border-radius: var(--radius-sm, 8px);
+  color: #ffffff;
+  font-size: 13.5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.input-field:focus, .form-input:focus {
+  border-color: var(--border-focus, #3b82f6);
+  background-color: #0f121a;
+}
+
+.input-field::placeholder, .form-input::placeholder {
+  color: var(--text-muted, #585f73);
 }
 
 button {
+  font-family: inherit;
+  font-size: inherit;
   cursor: pointer;
   border: none;
   background: none;

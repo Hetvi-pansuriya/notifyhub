@@ -338,6 +338,7 @@ export function AdminPlans() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Starter, Growth, Scale"
+                  style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
                   required
                 />
               </div>
@@ -352,6 +353,7 @@ export function AdminPlans() {
                   value={monthlyLimit}
                   onChange={(e) => setMonthlyLimit(e.target.value)}
                   min="1"
+                  style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
                   required
                 />
               </div>
@@ -366,6 +368,7 @@ export function AdminPlans() {
                   value={dailyLimit}
                   onChange={(e) => setDailyLimit(e.target.value)}
                   min="1"
+                  style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
                   required
                 />
               </div>
@@ -381,6 +384,7 @@ export function AdminPlans() {
                   onChange={(e) => setRateLimit(e.target.value)}
                   min="1"
                   max="10000"
+                  style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
                   required
                 />
               </div>
