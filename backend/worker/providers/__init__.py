@@ -1,7 +1,8 @@
 """Email provider implementations package."""
 
 from app.config import settings
-from worker.providers.base import BaseEmailProvider, ProviderOutcome, ProviderResult
+from worker.providers.base import Attachment, BaseEmailProvider, ProviderOutcome, ProviderResult
+from worker.providers.fake import FakeEmailProvider
 from worker.providers.smtp import SmtpEmailProvider
 
 
@@ -13,5 +14,7 @@ def get_provider() -> BaseEmailProvider:
         return SendgridEmailProvider()
     elif provider_name == "smtp":
         return SmtpEmailProvider()
+    elif provider_name == "fake":
+        return FakeEmailProvider()
     else:
         raise ValueError(f"Unknown MAIL_PROVIDER: '{settings.MAIL_PROVIDER}'. Expected 'smtp' or 'sendgrid'.")

@@ -9,8 +9,8 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import Client, Delivery, DeliveryAttempt, NotificationEvent
-from worker.providers.base import BaseEmailProvider, ProviderOutcome
+from app.models import Client, Delivery, DeliveryAttachment, DeliveryAttempt, NotificationEvent
+from worker.providers.base import Attachment, BaseEmailProvider, ProviderOutcome
 
 logger = logging.getLogger("worker.sender")
 
@@ -141,7 +141,43 @@ def process_single_delivery(
     else:
         provider_name = (settings.MAIL_PROVIDER or "smtp").lower()
 
-    # 4. Dispatch through email provider with latency measurement
+    attachment_rows = (
+        db.query(DeliveryAttachment)
+        .filter(DeliveryAttachment.delivery_id == delivery.id)
+        .all()
+    )
+    provider_attachments = None
+    if attachment_rows:
+        if any(att.content is None for att in attachment_rows):
+            delivery.status = "dead"
+            delivery.last_error = "Attachment is no longer available"
+            delivery.locked_until = None
+            delivery.next_attempt_at = None
+            if delivery.sensitive:
+                redact_sensitive_delivery(db, delivery)
+            db.commit()
+            logger.warning(
+                "Delivery %s marked dead: Attachment is no longer available",
+                delivery.id,
+            )
+            return
+
+        provider_attachments = [
+            Attachment(
+                filename=att.filename,
+                content_type=att.content_type,
+                bytes=att.content,
+            )
+            for att in attachment_rows
+        ]
+        total_size = sum(att.size_bytes for att in attachment_rows)
+        logger.info(
+            "Delivery %s dispatching with %d attachment(s), total size %d bytes",
+            delivery.id,
+            len(provider_attachments),
+            total_size,
+        )
+
     start_time = time.perf_counter()
     result = provider.send(
         to=delivery.to_email,
@@ -150,6 +186,7 @@ def process_single_delivery(
         message_id=str(delivery.id),
         from_name=from_name,
         reply_to=reply_to,
+        attachments=provider_attachments,
     )
     latency_ms = int((time.perf_counter() - start_time) * 1000)
 

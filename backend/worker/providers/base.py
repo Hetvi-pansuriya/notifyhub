@@ -20,6 +20,13 @@ class ProviderResult:
     provider_response: Optional[str] = None
 
 
+@dataclass
+class Attachment:
+    filename: str
+    content_type: str
+    bytes: bytes
+
+
 class BaseEmailProvider(abc.ABC):
     """Abstract interface for email delivery providers."""
     provider_name: str = "base"
@@ -33,6 +40,7 @@ class BaseEmailProvider(abc.ABC):
         message_id: str,
         from_name: str,
         reply_to: Optional[str] = None,
+        attachments: Optional[list[Attachment]] = None,
         **kwargs,
     ) -> ProviderResult:
         """Dispatches an email and classifies the outcome."""

@@ -6,7 +6,7 @@ from email.message import EmailMessage
 from typing import Optional
 
 from app.config import settings
-from worker.providers.base import BaseEmailProvider, ProviderOutcome, ProviderResult
+from worker.providers.base import Attachment, BaseEmailProvider, ProviderOutcome, ProviderResult
 
 
 class SmtpEmailProvider(BaseEmailProvider):
@@ -33,6 +33,7 @@ class SmtpEmailProvider(BaseEmailProvider):
         message_id: str = "",
         from_name: str = "NotifyHub",
         reply_to: Optional[str] = None,
+        attachments: Optional[list[Attachment]] = None,
         **kwargs,
     ) -> ProviderResult:
         to_email = to or kwargs.get("to_email", "")
@@ -50,6 +51,20 @@ class SmtpEmailProvider(BaseEmailProvider):
         body_html = kwargs.get("body_html")
         if body_html:
             msg.add_alternative(body_html, subtype="html")
+
+        if attachments:
+            for att in attachments:
+                maintype, subtype = (
+                    att.content_type.split("/", 1)
+                    if "/" in att.content_type
+                    else ("application", "octet-stream")
+                )
+                msg.add_attachment(
+                    att.bytes,
+                    maintype=maintype,
+                    subtype=subtype,
+                    filename=att.filename,
+                )
 
         try:
             with smtplib.SMTP(host=self.host, port=self.port, timeout=self.timeout) as server:

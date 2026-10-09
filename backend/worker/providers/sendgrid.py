@@ -1,11 +1,10 @@
-"""SendGrid email provider implementation using httpx."""
-
+import base64
 import logging
 from typing import Optional
 import httpx
 
 from app.config import settings
-from worker.providers.base import BaseEmailProvider, ProviderOutcome, ProviderResult
+from worker.providers.base import Attachment, BaseEmailProvider, ProviderOutcome, ProviderResult
 
 logger = logging.getLogger("worker.providers.sendgrid")
 
@@ -55,6 +54,7 @@ class SendgridEmailProvider(BaseEmailProvider):
         message_id: str = "",
         from_name: str = "NotifyHub",
         reply_to: Optional[str] = None,
+        attachments: Optional[list[Attachment]] = None,
         **kwargs,
     ) -> ProviderResult:
         to_email = to or kwargs.get("to_email", "")
@@ -99,6 +99,17 @@ class SendgridEmailProvider(BaseEmailProvider):
 
         if reply_to:
             payload["reply_to"] = {"email": reply_to}
+
+        if attachments:
+            payload["attachments"] = [
+                {
+                    "content": base64.b64encode(att.bytes).decode("ascii"),
+                    "type": att.content_type,
+                    "filename": att.filename,
+                    "disposition": "attachment",
+                }
+                for att in attachments
+            ]
 
         try:
             if self._client is not None:
