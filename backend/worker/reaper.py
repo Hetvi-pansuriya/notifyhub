@@ -2,16 +2,39 @@
 
 import logging
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import SessionLocal
-from app.models import Delivery
-from worker.sender import redact_sensitive_delivery
+from app.models import Delivery, DeliveryAttachment
+from worker.sender import cleanup_delivery_attachments, redact_sensitive_delivery
 
 logger = logging.getLogger("worker.reaper")
+
+
+def purge_expired_dead_attachments(db: Session) -> int:
+    """Removes attachment file bytes from dead deliveries older than ATTACHMENT_RETENTION_DAYS."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=settings.ATTACHMENT_RETENTION_DAYS)
+    dead_attachments = (
+        db.query(DeliveryAttachment)
+        .join(Delivery, DeliveryAttachment.delivery_id == Delivery.id)
+        .filter(
+            Delivery.status == "dead",
+            Delivery.created_at <= cutoff,
+            DeliveryAttachment.content.isnot(None),
+        )
+        .all()
+    )
+    for att in dead_attachments:
+        att.content = None
+        att.content_removed_at = now
+
+    if dead_attachments:
+        db.commit()
+    return len(dead_attachments)
 
 
 def reap_stuck_deliveries(db: Session) -> int:
@@ -30,6 +53,9 @@ def reap_stuck_deliveries(db: Session) -> int:
     except Exception as stat_err:
         logger.debug("Failed to record reaper status: %s", stat_err)
 
+    # Purge file bytes of dead deliveries older than retention policy
+    purge_expired_dead_attachments(db)
+
     stuck_deliveries = (
         db.query(Delivery)
         .filter(Delivery.status == "processing", Delivery.locked_until < now)
@@ -45,6 +71,7 @@ def reap_stuck_deliveries(db: Session) -> int:
         if delivery.expires_at is not None and delivery.expires_at <= now:
             delivery.status = "expired"
             delivery.locked_until = None
+            cleanup_delivery_attachments(db, delivery.id)
             if delivery.sensitive:
                 redact_sensitive_delivery(db, delivery)
             logger.info("Reaper marked delivery %s as expired (lock timed out after expires_at)", delivery.id)

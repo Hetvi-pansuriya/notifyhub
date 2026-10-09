@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.deps import get_current_client
-from app.models import Client, Delivery
+from app.models import Client, Delivery, DeliveryAttachment
 from app.schemas.events import DeliveryDetail
 
 router = APIRouter(prefix="/api/deliveries", tags=["Deliveries"])
@@ -69,6 +69,17 @@ def retry_delivery(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Cannot retry sensitive deliveries",
+        )
+
+    attachment_rows = (
+        db.query(DeliveryAttachment)
+        .filter(DeliveryAttachment.delivery_id == id)
+        .all()
+    )
+    if attachment_rows and any(att.content is None for att in attachment_rows):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The attachment has expired. Send a new event.",
         )
 
     delivery.attempt_count = 0

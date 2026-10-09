@@ -55,6 +55,22 @@ def _default_outgoing_rate() -> float:
 outgoing_rate_limiter = OutgoingRateLimiter(_default_outgoing_rate())
 
 
+def cleanup_delivery_attachments(db: Session, delivery_id) -> None:
+    """Removes attachment file bytes and marks content removal timestamp."""
+    now = datetime.now(timezone.utc)
+    attachments = (
+        db.query(DeliveryAttachment)
+        .filter(
+            DeliveryAttachment.delivery_id == delivery_id,
+            DeliveryAttachment.content.isnot(None),
+        )
+        .all()
+    )
+    for att in attachments:
+        att.content = None
+        att.content_removed_at = now
+
+
 def redact_sensitive_delivery(db: Session, delivery: Delivery) -> None:
     """Wipes subject, body, and event data for sensitive deliveries (Rule 9)."""
     delivery.rendered_subject = "redacted"
@@ -118,6 +134,7 @@ def process_single_delivery(
         logger.info("Delivery %s has expired (expires_at=%s)", delivery.id, delivery.expires_at)
         delivery.status = "expired"
         delivery.locked_until = None
+        cleanup_delivery_attachments(db, delivery.id)
         if delivery.sensitive:
             redact_sensitive_delivery(db, delivery)
         db.commit()
@@ -213,6 +230,7 @@ def process_single_delivery(
         delivery.status = "sent"
         delivery.locked_until = None
         delivery.last_error = None
+        cleanup_delivery_attachments(db, delivery.id)
         if delivery.sensitive:
             redact_sensitive_delivery(db, delivery)
         try:
@@ -261,6 +279,9 @@ def process_single_delivery(
 
         if new_status in ("dead", "expired") and delivery.sensitive:
             redact_sensitive_delivery(db, delivery)
+
+        if new_status == "expired":
+            cleanup_delivery_attachments(db, delivery.id)
 
         if new_status == "queued":
             logger.info(
