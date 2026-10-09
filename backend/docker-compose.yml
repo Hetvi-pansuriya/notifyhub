@@ -1,0 +1,118 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: notifyhub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-notifyhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notifyhub_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-notifyhub_db}
+    ports:
+      # Maps to host 5433 by default to avoid conflict with local host PostgreSQL on 5432
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - notifyhub_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifyhub -d notifyhub_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: notifyhub-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # Web Inbox UI
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "1025"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notifyhub-api
+    restart: unless-stopped
+    # Runs Alembic migration on startup, then starts FastAPI with reload on port 8000
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://notifyhub:notifyhub_secret@postgres:5432/notifyhub_db
+      - ADMIN_KEY=${ADMIN_KEY:-admin_master_secret_key_12345}
+      - HMAC_SECRET=${HMAC_SECRET:-notifyhub_hmac_secret_token_67890}
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_FROM=${SMTP_FROM:-no-reply@notifyhub.local}
+      - MAIL_PROVIDER=${MAIL_PROVIDER:-smtp}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - FROM_EMAIL=${FROM_EMAIL:-no-reply@notifyhub.local}
+      - GLOBAL_DAILY_LIMIT=${GLOBAL_DAILY_LIMIT:-300}
+      - DEMO_ALLOWED_RECIPIENTS=${DEMO_ALLOWED_RECIPIENTS:-}
+      - DEFAULT_RATE_LIMIT_PER_SEC=${DEFAULT_RATE_LIMIT_PER_SEC:-50}
+      - OUTGOING_RATE_PER_SEC=${OUTGOING_RATE_PER_SEC:-20}
+      - WORKER_POLL_SECONDS=${WORKER_POLL_SECONDS:-1}
+      - LOCK_SECONDS=${LOCK_SECONDS:-60}
+      - REAPER_SECONDS=${REAPER_SECONDS:-30}
+      - SESSION_DAYS=${SESSION_DAYS:-7}
+      - COOKIE_NAME=${COOKIE_NAME:-nh_session}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      - MAX_ACTIVE_KEYS=${MAX_ACTIVE_KEYS:-5}
+      - LOGIN_MAX_ATTEMPTS=${LOGIN_MAX_ATTEMPTS:-10}
+      - LOGIN_WINDOW_MINUTES=${LOGIN_WINDOW_MINUTES:-15}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@notifyhub.local}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-AdminSecretPass123!}
+      - SEED_OWNER_PASSWORD=${SEED_OWNER_PASSWORD:-FakeShopOwnerPass123!}
+      - DEMO_OWNER_PASSWORD=${DEMO_OWNER_PASSWORD:-DemoClientPass123!}
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./worker:/app/worker
+      - ./tests:/app/tests
+      - ./scripts:/app/scripts
+      - ./demo_keys:/app/demo_keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notifyhub-worker
+    restart: unless-stopped
+    command: python -m worker.main
+    environment:
+      - DATABASE_URL=postgresql://notifyhub:notifyhub_secret@postgres:5432/notifyhub_db
+      - ADMIN_KEY=${ADMIN_KEY:-admin_master_secret_key_12345}
+      - HMAC_SECRET=${HMAC_SECRET:-notifyhub_hmac_secret_token_67890}
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_FROM=${SMTP_FROM:-no-reply@notifyhub.local}
+      - MAIL_PROVIDER=${MAIL_PROVIDER:-smtp}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - FROM_EMAIL=${FROM_EMAIL:-no-reply@notifyhub.local}
+      - GLOBAL_DAILY_LIMIT=${GLOBAL_DAILY_LIMIT:-300}
+      - DEMO_ALLOWED_RECIPIENTS=${DEMO_ALLOWED_RECIPIENTS:-}
+      - DEFAULT_RATE_LIMIT_PER_SEC=${DEFAULT_RATE_LIMIT_PER_SEC:-50}
+      - OUTGOING_RATE_PER_SEC=${OUTGOING_RATE_PER_SEC:-20}
+      - WORKER_POLL_SECONDS=${WORKER_POLL_SECONDS:-1}
+      - LOCK_SECONDS=${LOCK_SECONDS:-60}
+      - REAPER_SECONDS=${REAPER_SECONDS:-30}
+    volumes:
+      - ./app:/app/app
+      - ./worker:/app/worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+
+volumes:
+  notifyhub_postgres_data:

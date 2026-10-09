@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.notifyhub.example.com/api/:path*"
+    },
+    {
+      "source": "/console/:path*",
+      "destination": "https://api.notifyhub.example.com/console/:path*"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "https://api.notifyhub.example.com/admin/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}

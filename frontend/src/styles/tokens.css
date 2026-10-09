@@ -1,0 +1,33 @@
+:root {
+  --color-page: #0b0b0c;
+  --color-card: #141415;
+  --color-card-hover: #19191b;
+  --color-sidebar: #0f0f10;
+  --color-border: #232325;
+  --color-border-subtle: #1c1c1e;
+  --color-text: #ececec;
+  --color-muted: #9a9a9f;
+  
+  /* Status accent colors only */
+  --color-green: #4ade80;
+  --color-green-bg: rgba(74, 222, 128, 0.12);
+  --color-red: #f87171;
+  --color-red-bg: rgba(248, 113, 113, 0.12);
+  --color-amber: #fbbf24;
+  --color-amber-bg: rgba(251, 191, 36, 0.12);
+  --color-grey: #85858b;
+  --color-grey-bg: rgba(133, 133, 139, 0.14);
+
+  /* Radii */
+  --radius-card: 18px;
+  --radius-inner: 12px;
+  --radius-pill: 99px;
+
+  /* Typography */
+  --font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Dimensions */
+  --sidebar-width: 248px;
+  --topbar-height: 64px;
+}

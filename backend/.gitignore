@@ -1,0 +1,4 @@
+# Environment variables & generated demo keys
+.env
+!.env.example
+demo_keys/
