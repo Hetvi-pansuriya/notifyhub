@@ -11,11 +11,11 @@ const STORAGE_ROLE = 'notifyhub_active_role'
 const STORAGE_CLIENT_INFO = 'notifyhub_client_info'
 const STORAGE_AUDIT_LOGS = 'notifyhub_audit_logs'
 
-export const DEFAULT_CLIENT_KEY = 'nh_live_fakeshop_demo_key_secret_9999999999'
-export const DEFAULT_ADMIN_KEY = 'admin_master_secret_key_12345'
+export const DEFAULT_CLIENT_KEY = ''
+export const DEFAULT_ADMIN_KEY = ''
 
 export function getClientKey() {
-  return localStorage.getItem(STORAGE_CLIENT_KEY) || DEFAULT_CLIENT_KEY
+  return localStorage.getItem(STORAGE_CLIENT_KEY) || ''
 }
 
 export function setClientKey(key) {
@@ -24,7 +24,7 @@ export function setClientKey(key) {
 }
 
 export function getAdminKey() {
-  return localStorage.getItem(STORAGE_ADMIN_KEY) || DEFAULT_ADMIN_KEY
+  return localStorage.getItem(STORAGE_ADMIN_KEY) || ''
 }
 
 export function setAdminKey(key) {
@@ -63,13 +63,7 @@ export function clearSession() {
 export function getAuditLogs() {
   try {
     const raw = localStorage.getItem(STORAGE_AUDIT_LOGS)
-    return raw
-      ? JSON.parse(raw)
-      : [
-          { when: '10:42', who: 'Admin', action: 'Provisioned new tenant client', client: 'Acme Commerce', category: 'Clients' },
-          { when: '09:15', who: 'System', action: 'Rotated API key', client: 'FakeShop', category: 'Security' },
-          { when: 'Yesterday', who: 'Admin', action: 'Updated rate limits to 100/s', client: 'Tenant A', category: 'Rate limits' },
-        ]
+    return raw ? JSON.parse(raw) : []
   } catch {
     return []
   }

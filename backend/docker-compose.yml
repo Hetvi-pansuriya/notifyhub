@@ -66,15 +66,12 @@ services:
       - LOGIN_WINDOW_MINUTES=${LOGIN_WINDOW_MINUTES:-15}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@notifyhub.local}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-AdminSecretPass123!}
-      - SEED_OWNER_PASSWORD=${SEED_OWNER_PASSWORD:-FakeShopOwnerPass123!}
-      - DEMO_OWNER_PASSWORD=${DEMO_OWNER_PASSWORD:-DemoClientPass123!}
     volumes:
       - ./app:/app/app
       - ./alembic:/app/alembic
       - ./worker:/app/worker
       - ./tests:/app/tests
       - ./scripts:/app/scripts
-      - ./demo_keys:/app/demo_keys
     depends_on:
       postgres:
         condition: service_healthy

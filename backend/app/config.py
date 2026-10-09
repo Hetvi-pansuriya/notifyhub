@@ -45,8 +45,6 @@ class Settings(BaseSettings):
     LOGIN_WINDOW_MINUTES: int = 15
     ADMIN_EMAIL: str = "admin@notifyhub.local"
     ADMIN_PASSWORD: str = "AdminSecretPass123!"
-    SEED_OWNER_PASSWORD: str = "FakeShopOwnerPass123!"
-    DEMO_OWNER_PASSWORD: str = "DemoClientPass123!"
 
     @model_validator(mode="after")
     def validate_sendgrid_config(self) -> "Settings":

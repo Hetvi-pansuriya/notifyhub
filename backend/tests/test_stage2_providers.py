@@ -103,8 +103,8 @@ def test_sendgrid_provider_success_202(caplog):
             subject="Order Placed",
             body="Thank you for your order!",
             message_id="del_9999",
-            from_name="ShopEasy",
-            reply_to="support@shopeasy.example",
+            from_name="Acme Corp",
+            reply_to="support@example.com",
         )
 
     assert res.outcome == ProviderOutcome.SUCCESS
@@ -114,9 +114,9 @@ def test_sendgrid_provider_success_202(caplog):
     payload = sent_request["body"]
     assert payload["from"] == {
         "email": "noreply@notifyhub.example",
-        "name": "ShopEasy via NotifyHub",
+        "name": "Acme Corp via NotifyHub",
     }
-    assert payload["reply_to"] == {"email": "support@shopeasy.example"}
+    assert payload["reply_to"] == {"email": "support@example.com"}
     assert payload["subject"] == "Order Placed"
     assert payload["content"] == [{"type": "text/plain", "value": "Thank you for your order!"}]
     assert payload["personalizations"] == [
@@ -149,7 +149,7 @@ def test_sendgrid_provider_auth_failure_401_403(caplog):
             subject="Test",
             body="Secret OTP 123456",
             message_id="del_401",
-            from_name="SecureLogin",
+            from_name="AuthService",
         )
 
     assert res.outcome == ProviderOutcome.TEMPORARY_ERROR
