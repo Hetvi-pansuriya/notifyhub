@@ -8,6 +8,15 @@ export function AdminSettings() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // Test email state
+  const [testRecipient, setTestRecipient] = useState('')
+  const [sendingTest, setSendingTest] = useState(false)
+  const [testResult, setTestResult] = useState(null)
+
+  // Connection probe state
+  const [probing, setProbing] = useState(false)
+  const [probeResult, setProbeResult] = useState(null)
+
   const loadSettings = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -24,6 +33,44 @@ export function AdminSettings() {
   useEffect(() => {
     loadSettings()
   }, [loadSettings])
+
+  const handleTestConnection = async () => {
+    setProbing(true)
+    setProbeResult(null)
+    try {
+      const res = await request('/admin/settings/test-connection', { method: 'POST' })
+      setProbeResult(res)
+    } catch (err) {
+      setProbeResult({ status: 'error', error: err.message || 'Connection probe failed' })
+    } finally {
+      setProbing(false)
+    }
+  }
+
+  const handleSendTestEmail = async (e) => {
+    e.preventDefault()
+    if (!testRecipient.trim()) return
+    setSendingTest(true)
+    setTestResult(null)
+    try {
+      const res = await request('/admin/settings/test-email', {
+        method: 'POST',
+        body: {
+          recipient: testRecipient.trim(),
+          subject: 'NotifyHub Diagnostic Verification Email',
+          body: 'Hello! This is a real diagnostic email dispatched directly from your NotifyHub Admin Console.',
+        },
+      })
+      setTestResult({
+        type: 'success',
+        text: `Email successfully accepted by ${res.provider} in ${res.latency_ms}ms (ID: ${res.provider_message_id || 'ok'})`,
+      })
+    } catch (err) {
+      setTestResult({ type: 'error', text: err.message || 'Failed to dispatch test email' })
+    } finally {
+      setSendingTest(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -77,8 +124,8 @@ export function AdminSettings() {
         {
           key: 'GLOBAL_DAILY_LIMIT',
           label: 'Global Safety Daily Ceiling',
-          value: `${(settings.global_daily_limit || 300).toLocaleString()} emails/day`,
-          env: 'GLOBAL_DAILY_LIMIT=...',
+          value: `${(settings.global_daily_limit || 90).toLocaleString()} emails/day`,
+          env: 'GLOBAL_DAILY_LIMIT=90',
           note: 'Maximum emails the platform can send across all tenants within a calendar day.',
         },
         {
@@ -92,7 +139,7 @@ export function AdminSettings() {
           key: 'DEFAULT_PLAN',
           label: 'Default Assigned Plan Tier',
           value: `${settings.default_plan_name || 'Starter'} (${(settings.default_plan_monthly_limit || 10000).toLocaleString()}/mo)`,
-          env: 'DEFAULT_PLAN_NAME=... / DEFAULT_PLAN_MONTHLY_LIMIT=...',
+          env: 'DEFAULT_PLAN_NAME=Starter',
           note: 'Automatically granted to new signups upon self-service registration.',
         },
       ],
@@ -111,8 +158,8 @@ export function AdminSettings() {
         {
           key: 'LOCK_SECONDS & REAPER_SECONDS',
           label: 'Lock Lease & Reaper Interval',
-          value: `${settings.lock_seconds || 120}s lock timeout · ${settings.reaper_seconds || 60}s sweep`,
-          env: 'LOCK_SECONDS=... / REAPER_SECONDS=...',
+          value: `${settings.lock_seconds || 60}s lock timeout · ${settings.reaper_seconds || 30}s sweep`,
+          env: 'LOCK_SECONDS=60 / REAPER_SECONDS=30',
           note: 'Reaper re-enqueues orphaned processing jobs that exceeded lock lease duration.',
         },
         {
@@ -126,7 +173,7 @@ export function AdminSettings() {
           key: 'LOG_LEVEL',
           label: 'Server Logging Level',
           value: settings.log_level || 'INFO',
-          env: 'LOG_LEVEL=...',
+          env: 'LOG_LEVEL=INFO',
           note: 'Application log verbosity for FastAPI server and worker daemon.',
         },
       ],
@@ -138,11 +185,156 @@ export function AdminSettings() {
       {/* Header */}
       <div>
         <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
-          System Configuration
+          System Configuration & Diagnostics
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
-          Active platform parameters, security safeguards, and environment configuration (read-only)
+          Active platform parameters, mail provider connectivity probes, and diagnostic dispatch tools
         </p>
+      </div>
+
+      {/* Interactive Diagnostics Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+        {/* Test Email Dispatch Card */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface-card, #12141a)',
+            border: '1px solid var(--border-subtle, #1f232f)',
+            borderRadius: 'var(--radius-lg, 16px)',
+            padding: '24px',
+          }}
+        >
+          <div style={{ marginBottom: '14px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+              Dispatch Test Email
+            </h2>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
+              Send an immediate diagnostic email through the active mail provider ({settings.mail_provider || 'smtp'})
+            </p>
+          </div>
+
+          <form onSubmit={handleSendTestEmail} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#8c93a7', marginBottom: '6px' }}>
+                Recipient Email Address
+              </label>
+              <input
+                type="email"
+                required
+                value={testRecipient}
+                onChange={(e) => setTestRecipient(e.target.value)}
+                placeholder="developer@example.com"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  backgroundColor: '#161922',
+                  border: '1px solid var(--border-subtle, #1f232f)',
+                  borderRadius: '8px',
+                  color: '#ffffff',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            {testResult && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '12.5px',
+                  backgroundColor: testResult.type === 'success' ? 'rgba(74, 222, 128, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: testResult.type === 'success' ? '#4ade80' : '#ef4444',
+                  border: `1px solid ${testResult.type === 'success' ? 'rgba(74, 222, 128, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                }}
+              >
+                {testResult.text}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={sendingTest || !testRecipient.trim()}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {sendingTest ? 'Sending Test...' : 'Send Test Message'}
+            </button>
+          </form>
+        </div>
+
+        {/* Connectivity Probe Card */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface-card, #12141a)',
+            border: '1px solid var(--border-subtle, #1f232f)',
+            borderRadius: 'var(--radius-lg, 16px)',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <div style={{ marginBottom: '14px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                Provider Connectivity Probe
+              </h2>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
+                Test low-level network socket connectivity and latency to the active outbound mail server
+              </p>
+            </div>
+
+            <div
+              style={{
+                padding: '14px 16px',
+                backgroundColor: '#161922',
+                borderRadius: '10px',
+                border: '1px solid #202431',
+                marginBottom: '16px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: '#8c93a7' }}>Configured Provider:</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', fontFamily: 'monospace' }}>
+                  {settings.mail_provider === 'sendgrid' ? 'SendGrid Web API' : 'MailHog Local SMTP'}
+                </span>
+              </div>
+              {probeResult && (
+                <div style={{ marginTop: '12px', borderTop: '1px solid #202431', paddingTop: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12.5px', color: '#8c93a7' }}>Probe Status:</span>
+                    <span className={`badge badge-${probeResult.status === 'ok' ? 'green' : 'red'}`}>
+                      {probeResult.status === 'ok' ? 'Connected' : 'Connection Failed'}
+                    </span>
+                  </div>
+                  {probeResult.latency_ms !== undefined && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12.5px', color: '#8c93a7' }}>Round-trip Latency:</span>
+                      <span style={{ fontSize: '12.5px', color: '#4ade80', fontFamily: 'monospace' }}>
+                        {probeResult.latency_ms} ms
+                      </span>
+                    </div>
+                  )}
+                  {probeResult.error && (
+                    <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>
+                      {probeResult.error}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleTestConnection}
+            disabled={probing}
+            style={{ alignSelf: 'flex-start' }}
+          >
+            {probing ? 'Probing Connection...' : 'Test Provider Connectivity'}
+          </button>
+        </div>
       </div>
 
       {/* Info notice about .env */}

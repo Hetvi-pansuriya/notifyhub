@@ -184,7 +184,7 @@ export function AdminAuditLog() {
                 {logs.map((log) => (
                   <tr key={log.id} style={{ borderBottom: '1px solid var(--border-subtle, #1f232f)' }}>
                     <td style={{ padding: '12px', color: 'var(--text-muted, #585f73)', whiteSpace: 'nowrap' }}>
-                      {formatDateTime(log.created_at)}
+                      {formatDateTime(log.created_at || log.at)}
                     </td>
                     <td style={{ padding: '12px', color: '#ffffff', fontWeight: 500 }}>
                       {log.actor_email}

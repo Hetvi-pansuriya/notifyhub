@@ -46,8 +46,24 @@ def seed_admin() -> None:
         else:
             user.password_hash = password_hash
             user.role = "admin"
-            db.commit()
-            print(f"[SUCCESS] Updated platform administrator '{admin_email}'.")
+        # Seed 3 standard platform plans if missing
+        from app.models import Plan
+        plans_data = [
+            ("Starter", "Free tier for development and early stage apps", 10000, 30, 50),
+            ("Pro", "Growing businesses requiring higher daily sending throughput", 50000, 100, 100),
+            ("Enterprise", "Large scale transactional email volume with dedicated rate ceilings", 250000, 500, 200),
+        ]
+        for name, desc, m_lim, d_lim, r_lim in plans_data:
+            p = db.query(Plan).filter(Plan.name == name).first()
+            if p is None:
+                p = Plan(name=name, description=desc, monthly_email_limit=m_lim, daily_email_limit=d_lim, rate_limit_per_sec=r_lim)
+                db.add(p)
+                print(f"[SUCCESS] Created plan '{name}'.")
+            else:
+                p.monthly_email_limit = m_lim
+                p.daily_email_limit = d_lim
+                p.rate_limit_per_sec = r_lim
+        db.commit()
     finally:
         db.close()
 

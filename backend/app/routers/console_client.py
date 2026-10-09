@@ -44,16 +44,17 @@ def get_console_client(
     _, client = auth
     sent_today = get_sent_today(db, client.id)
     sender_email = settings.FROM_EMAIL or settings.sender_email or "no-reply@notifyhub.local"
-
+    daily_limit = client.daily_email_limit if client.daily_email_limit is not None else 30
     return ConsoleClientResponse(
         id=client.id,
         name=client.name,
         status=client.status,
         from_name=client.from_name or client.name,
         reply_to_email=client.reply_to_email,
-        daily_email_limit=client.daily_email_limit if client.daily_email_limit is not None else 30,
+        daily_email_limit=daily_limit,
         sent_today=sent_today,
         sender_email=sender_email,
+        rate_limit_per_sec=client.rate_limit_per_sec or 50,
     )
 
 
@@ -61,7 +62,7 @@ def get_console_client(
     "",
     response_model=ConsoleClientResponse,
     status_code=status.HTTP_200_OK,
-    summary="Update client sending identity (from_name and reply_to_email)",
+    summary="Update client sending identity and company name",
 )
 def update_console_client(
     data: ConsoleClientUpdate,
@@ -70,6 +71,8 @@ def update_console_client(
 ):
     _, client = auth
 
+    if data.name and data.name.strip():
+        client.name = data.name.strip()
     client.from_name = data.from_name
     client.reply_to_email = data.reply_to_email
 
@@ -88,4 +91,5 @@ def update_console_client(
         daily_email_limit=client.daily_email_limit if client.daily_email_limit is not None else 30,
         sent_today=sent_today,
         sender_email=sender_email,
+        rate_limit_per_sec=client.rate_limit_per_sec or 50,
     )

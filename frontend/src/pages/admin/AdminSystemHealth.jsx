@@ -3,12 +3,14 @@ import { request } from '../../api'
 import { usePolling } from '../../hooks/useApi'
 import { formatDateTime, formatRelative, userTimezone } from '../../utils/date'
 import { StatCard } from '../../components/StatCard'
+import { LineChart } from '../../components/LineChart'
 import { ErrorState } from '../../components/ErrorState'
 import { Skeleton } from '../../components/Skeleton'
 
 export function AdminSystemHealth() {
   const [health, setHealth] = useState(null)
   const [dbStatus, setDbStatus] = useState('connected')
+  const [seriesData, setSeriesData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -16,12 +18,21 @@ export function AdminSystemHealth() {
     if (!silent) setLoading(true)
     setError(null)
     try {
-      const [hRes, rootHealth] = await Promise.all([
+      const now = new Date()
+      const d1 = new Date(now.getTime() - 24 * 3600 * 1000)
+      const fromIso = d1.toISOString()
+      const toIso = now.toISOString()
+
+      const [hRes, rootHealth, sRes] = await Promise.all([
         request('/admin/health'),
         request('/health').catch(() => ({ status: 'healthy', database: 'connected' })),
+        request(
+          `/admin/stats/series?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(toIso)}&bucket=hour&metric=sent&tz=${encodeURIComponent(userTimezone)}`
+        ).catch(() => ({ series: [] })),
       ])
       setHealth(hRes)
       setDbStatus(rootHealth?.database === 'connected' ? 'connected' : 'degraded')
+      setSeriesData(sRes?.series || [])
       setLoading(false)
     } catch (err) {
       if (!silent) {
@@ -45,6 +56,7 @@ export function AdminSystemHealth() {
           <Skeleton variant="card" height="110px" />
           <Skeleton variant="card" height="110px" />
         </div>
+        <Skeleton variant="card" height="260px" />
         <Skeleton variant="card" height="280px" />
       </div>
     )
@@ -65,7 +77,7 @@ export function AdminSystemHealth() {
           System Health & Telemetry
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
-          Background daemon state, database connectivity, delivery queues, and provider uptime ({userTimezone})
+          Background daemon state, database connectivity, throughput graphs, and delivery queues ({userTimezone})
         </p>
       </div>
 
@@ -99,6 +111,36 @@ export function AdminSystemHealth() {
           }
           badge={!isWorkerStale ? 'Heartbeat OK' : 'Stale (>60s)'}
           badgeType={!isWorkerStale ? 'green' : 'orange'}
+        />
+      </div>
+
+      {/* Throughput Graph Card */}
+      <div
+        style={{
+          backgroundColor: 'var(--bg-surface-card, #12141a)',
+          border: '1px solid var(--border-subtle, #1f232f)',
+          borderRadius: 'var(--radius-lg, 16px)',
+          padding: '24px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div>
+            <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+              24-Hour Processing Throughput
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)', margin: '2px 0 0 0' }}>
+              Real-time hourly outbound dispatch volume across all background workers
+            </p>
+          </div>
+          <span className="badge badge-blue">Telemetry Stream</span>
+        </div>
+
+        <LineChart
+          data={seriesData}
+          height={240}
+          strokeColor="#10b981"
+          unit="dispatches"
+          emptyMessage="No dispatch activity recorded in the last 24 hours."
         />
       </div>
 

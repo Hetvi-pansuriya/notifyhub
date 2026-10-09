@@ -18,12 +18,14 @@ class ConsoleClientResponse(BaseModel):
     daily_email_limit: int
     sent_today: int
     sender_email: str
+    rate_limit_per_sec: Optional[int] = 50
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ConsoleClientUpdate(BaseModel):
-    """Payload to update client's sending identity."""
+    """Payload to update client's sending identity and organization name."""
+    name: Optional[str] = None
     from_name: str
     reply_to_email: Optional[str] = None
 

@@ -112,9 +112,11 @@ class PlanResponse(BaseModel):
 class AuditLogRow(BaseModel):
     id: uuid.UUID
     at: datetime
+    created_at: Optional[datetime] = None
     actor_email: str
     action: str
     client_id: Optional[uuid.UUID] = None
+    client_name: Optional[str] = None
     detail: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -9,6 +9,8 @@ export function ClientPlan() {
   const [error, setError] = useState(null)
   const [currentPlanData, setCurrentPlanData] = useState(null)
   const [availablePlans, setAvailablePlans] = useState([])
+  const [switchingId, setSwitchingId] = useState(null)
+  const [message, setMessage] = useState(null)
 
   const loadPlan = useCallback(async () => {
     setLoading(true)
@@ -31,6 +33,24 @@ export function ClientPlan() {
     loadPlan()
   }, [loadPlan])
 
+  const handleSelectPlan = async (p) => {
+    if (switchingId || p.id === currentPlanData?.plan?.id) return
+    setSwitchingId(p.id)
+    setMessage(null)
+    try {
+      await request('/console/plan/select', {
+        method: 'POST',
+        body: { plan_id: p.id },
+      })
+      setMessage({ type: 'success', text: `Successfully switched to the ${p.name} plan!` })
+      await loadPlan()
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Failed to switch plan' })
+    } finally {
+      setSwitchingId(null)
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -46,15 +66,13 @@ export function ClientPlan() {
   }
 
   const plan = currentPlanData?.plan || {}
-  const usage = currentPlanData?.usage || {}
-
   const monthlyLimit = plan.monthly_email_limit || 10000
-  const sentThisMonth = usage.sent_this_month || 0
+  const sentThisMonth = currentPlanData?.sent_this_month || 0
   const monthlyPct = Math.min(100, Math.round((sentThisMonth / monthlyLimit) * 100))
   const monthlyRemaining = Math.max(0, monthlyLimit - sentThisMonth)
 
-  const dailyLimit = plan.daily_email_limit || 1000
-  const sentToday = usage.sent_today || 0
+  const dailyLimit = currentPlanData?.daily_limit || plan.daily_email_limit || 30
+  const sentToday = currentPlanData?.sent_today || 0
   const dailyPct = Math.min(100, Math.round((sentToday / dailyLimit) * 100))
 
   return (
@@ -65,9 +83,24 @@ export function ClientPlan() {
           Plan & Quotas
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
-          Current subscription plan tier and delivery capacity limits
+          Current subscription tier, real-time usage meters, and self-service plan selection
         </p>
       </div>
+
+      {message && (
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: '10px',
+            fontSize: '13px',
+            backgroundColor: message.type === 'success' ? 'rgba(74, 222, 128, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            color: message.type === 'success' ? '#4ade80' : '#ef4444',
+            border: `1px solid ${message.type === 'success' ? 'rgba(74, 222, 128, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+          }}
+        >
+          {message.text}
+        </div>
+      )}
 
       {/* Current Plan Overview Card */}
       <div
@@ -96,19 +129,19 @@ export function ClientPlan() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <StatCard
             title="Monthly Email Limit"
-            value={monthlyLimit}
+            value={monthlyLimit.toLocaleString()}
             subtext="Calendar month quota"
             badgeType="blue"
           />
           <StatCard
             title="Daily Safety Limit"
-            value={dailyLimit}
+            value={dailyLimit.toLocaleString()}
             subtext="Per-day safety ceiling"
             badgeType="orange"
           />
           <StatCard
             title="Rate Limit"
-            value={`${plan.rate_limit_per_second ?? plan.rate_limit_per_sec ?? 50}/sec`}
+            value={`${plan.rate_limit_per_sec || 50}/sec`}
             subtext="Token bucket throttle"
             badgeType="gray"
           />
@@ -161,78 +194,104 @@ export function ClientPlan() {
         </div>
       </div>
 
-      {/* Available Plans Comparison Card */}
-      <div
-        style={{
-          backgroundColor: 'var(--bg-surface-card, #12141a)',
-          border: '1px solid var(--border-subtle, #1f232f)',
-          borderRadius: 'var(--radius-lg, 16px)',
-          padding: '24px',
-        }}
-      >
+      {/* Available Plans Side-by-Side Cards (No Payment Gateway) */}
+      <div>
         <div style={{ marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
-            Available Platform Plans
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+            Select a Plan
           </h2>
-          <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
-            Review capacity tiers configured for this NotifyHub deployment.
+          <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
+            Instant tier upgrades without payment gateways or credit cards required
           </p>
         </div>
 
-        <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle, #1f232f)', color: 'var(--text-muted, #585f73)' }}>
-                <th style={{ padding: '10px 12px', fontWeight: 500 }}>Plan Name</th>
-                <th style={{ padding: '10px 12px', fontWeight: 500 }}>Monthly Limit</th>
-                <th style={{ padding: '10px 12px', fontWeight: 500 }}>Daily Limit</th>
-                <th style={{ padding: '10px 12px', fontWeight: 500 }}>Rate Limit</th>
-                <th style={{ padding: '10px 12px', fontWeight: 500, textAlign: 'right' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {availablePlans.map((p) => {
-                const isCurrent = p.name === plan.name
-                return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid var(--border-subtle, #1f232f)' }}>
-                    <td style={{ padding: '12px', fontWeight: 600, color: '#ffffff' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+          {availablePlans.map((p) => {
+            const isCurrent = p.id === plan.id || p.name === plan.name
+            return (
+              <div
+                key={p.id}
+                style={{
+                  backgroundColor: 'var(--bg-surface-card, #12141a)',
+                  border: `2px solid ${isCurrent ? '#3b82f6' : 'var(--border-subtle, #1f232f)'}`,
+                  borderRadius: 'var(--radius-lg, 16px)',
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: isCurrent ? '0 4px 20px rgba(59, 130, 246, 0.15)' : 'none',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                       {p.name}
-                    </td>
-                    <td style={{ padding: '12px', color: 'var(--text-secondary, #8c93a7)' }}>
-                      {(p.monthly_email_limit || 0).toLocaleString()} / month
-                    </td>
-                    <td style={{ padding: '12px', color: 'var(--text-secondary, #8c93a7)' }}>
-                      {(p.daily_email_limit || 0).toLocaleString()} / day
-                    </td>
-                    <td style={{ padding: '12px', color: 'var(--text-secondary, #8c93a7)' }}>
-                      {p.rate_limit_per_second || 50} req/sec
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                      {isCurrent ? (
-                        <span className="badge badge-green">Active</span>
-                      ) : (
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)' }}>Available</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </h3>
+                    {isCurrent && (
+                      <span className="badge badge-blue" style={{ fontSize: '11px', padding: '3px 8px' }}>
+                        Active Plan
+                      </span>
+                    )}
+                  </div>
 
-        {/* Note */}
-        <div
-          style={{
-            padding: '12px 16px',
-            backgroundColor: '#161922',
-            border: '1px solid var(--border-subtle, #1f232f)',
-            borderRadius: '8px',
-            fontSize: '12.5px',
-            color: 'var(--text-muted, #585f73)',
-          }}
-        >
-          ℹ <strong style={{ color: '#ffffff' }}>Need to upgrade or change your limits?</strong> Contact your platform administrator to adjust your plan assignment.
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', minHeight: '36px', margin: '0 0 16px 0' }}>
+                    {p.description || 'Full-featured transactional email delivery'}
+                  </p>
+
+                  <div style={{ fontSize: '26px', fontWeight: 700, color: '#ffffff', marginBottom: '20px' }}>
+                    {p.name === 'Starter' ? '$0' : p.name === 'Pro' ? '$29' : '$99'}
+                    <span style={{ fontSize: '13px', fontWeight: 400, color: 'var(--text-muted, #585f73)' }}>
+                      {' '}/ month
+                    </span>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid #1a1d27', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
+                      <span style={{ color: '#10b981' }}>✓</span>
+                      <span>{(p.monthly_email_limit || 0).toLocaleString()} emails / month</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
+                      <span style={{ color: '#10b981' }}>✓</span>
+                      <span>{(p.daily_email_limit || 0).toLocaleString()} emails / day safety ceiling</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
+                      <span style={{ color: '#10b981' }}>✓</span>
+                      <span>{p.rate_limit_per_sec || 50} requests / sec throughput</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
+                      <span style={{ color: '#10b981' }}>✓</span>
+                      <span>Zero-message-loss queueing & retries</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
+                      <span style={{ color: '#10b981' }}>✓</span>
+                      <span>Self-service API keys (up to 5 active)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '24px' }}>
+                  {isCurrent ? (
+                    <button
+                      className="btn-secondary"
+                      disabled
+                      style={{ width: '100%', cursor: 'default', opacity: 0.8 }}
+                    >
+                      Current Plan
+                    </button>
+                  ) : (
+                    <button
+                      className="btn-primary"
+                      onClick={() => handleSelectPlan(p)}
+                      disabled={switchingId === p.id}
+                      style={{ width: '100%' }}
+                    >
+                      {switchingId === p.id ? 'Switching...' : `Switch to ${p.name}`}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

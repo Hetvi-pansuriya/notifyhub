@@ -3,12 +3,13 @@
 from datetime import datetime
 from typing import Optional
 import uuid
-from fastapi import APIRouter, Depends, Query, Request, status
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import require_admin
-from app.models import AuditLog
+from app.models import AuditLog, Client
 from app.schemas.admin import (
     AuditLogRow,
     ClientCreate,
@@ -59,6 +60,75 @@ def get_settings():
     return admin_service.get_system_settings()
 
 
+class TestEmailRequest(BaseModel):
+    recipient: str
+    subject: Optional[str] = "NotifyHub Diagnostic Test Email"
+    body: Optional[str] = "This is a diagnostic message dispatched from the NotifyHub Admin Console."
+
+
+@router.post("/settings/test-email", summary="Dispatch diagnostic email through active provider")
+def send_test_email(data: TestEmailRequest, db: Session = Depends(get_db)):
+    import time
+    from worker.providers.smtp import SmtpEmailProvider
+    from worker.providers.sendgrid import SendgridEmailProvider
+
+    provider_name = (settings.MAIL_PROVIDER or "smtp").lower()
+    t0 = time.time()
+    try:
+        if provider_name == "sendgrid":
+            if not settings.SENDGRID_API_KEY:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="SENDGRID_API_KEY is not configured")
+            p = SendgridEmailProvider(api_key=settings.SENDGRID_API_KEY, from_email=settings.FROM_EMAIL)
+        else:
+            p = SmtpEmailProvider(host=settings.SMTP_HOST, port=settings.SMTP_PORT, from_email=settings.SMTP_FROM)
+
+        res = p.send(
+            to=data.recipient,
+            subject=data.subject,
+            body=data.body,
+            message_id=str(uuid.uuid4()),
+            from_name="NotifyHub Admin",
+        )
+        latency_ms = int((time.time() - t0) * 1000)
+        return {
+            "status": "success",
+            "provider": provider_name,
+            "outcome": res.outcome.value,
+            "provider_message_id": res.provider_message_id,
+            "latency_ms": latency_ms,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to dispatch test email: {str(e)}",
+        )
+
+
+@router.post("/settings/test-connection", summary="Test active provider network connectivity")
+def test_connection():
+    import socket, time
+    provider_name = (settings.MAIL_PROVIDER or "smtp").lower()
+    t0 = time.time()
+    if provider_name == "sendgrid":
+        import httpx
+        try:
+            r = httpx.get("https://api.sendgrid.com", timeout=5.0)
+            ms = int((time.time() - t0) * 1000)
+            return {"status": "ok", "provider": "SendGrid API", "latency_ms": ms, "http_status": r.status_code}
+        except Exception as e:
+            return {"status": "error", "provider": "SendGrid API", "error": str(e)}
+    else:
+        try:
+            s = socket.create_connection((settings.SMTP_HOST, settings.SMTP_PORT), timeout=3.0)
+            s.close()
+            ms = int((time.time() - t0) * 1000)
+            return {"status": "ok", "provider": f"MailHog SMTP ({settings.SMTP_HOST}:{settings.SMTP_PORT})", "latency_ms": ms}
+        except Exception as e:
+            return {"status": "error", "provider": f"MailHog SMTP ({settings.SMTP_HOST}:{settings.SMTP_PORT})", "error": str(e)}
+
+
 # =====================================================================
 # CLIENT MANAGEMENT
 # =====================================================================
@@ -94,6 +164,15 @@ def create_client(
     summary="List all client tenants with optional search and status filter",
 )
 def list_clients(
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    return admin_service.list_clients_table(db, search=search, status_filter=status)
+
+
+@router.get("/clients/table", summary="List all client tenants for overview table")
+def get_clients_table(
     search: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     db: Session = Depends(get_db),
@@ -234,4 +313,27 @@ def list_audit_log(
             (AuditLog.actor_email.ilike(term)) | (AuditLog.detail.ilike(term))
         )
 
-    return query.order_by(AuditLog.at.desc()).offset(offset).limit(limit).all()
+    logs = query.order_by(AuditLog.at.desc()).offset(offset).limit(limit).all()
+
+    # Pre-fetch client names
+    client_ids = {log.client_id for log in logs if log.client_id}
+    client_names = {}
+    if client_ids:
+        clients = db.query(Client.id, Client.name).filter(Client.id.in_(client_ids)).all()
+        client_names = {cid: cname for cid, cname in clients}
+
+    result = []
+    for log in logs:
+        result.append(
+            AuditLogRow(
+                id=log.id,
+                at=log.at,
+                created_at=log.at,
+                actor_email=log.actor_email,
+                action=log.action,
+                client_id=log.client_id,
+                client_name=client_names.get(log.client_id),
+                detail=log.detail,
+            )
+        )
+    return result

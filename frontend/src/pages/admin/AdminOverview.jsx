@@ -40,7 +40,7 @@ export function AdminOverview({ onSelectClient }) {
       )
 
       // 3. Clients table for top clients list
-      const clientsPromise = request('/admin/clients/table')
+      const clientsPromise = request('/admin/clients')
 
       const [ovRes, serRes, clRes] = await Promise.all([
         overviewPromise,
