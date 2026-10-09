@@ -16,7 +16,8 @@ import { ClientEventTypes } from './views/client/ClientEventTypes'
 import { ClientRecipients } from './views/client/ClientRecipients'
 import { ClientUsage } from './views/client/ClientUsage'
 import { ApiKeys } from './pages/client/ApiKeys' // Full Self-Service API Keys manager
-import { ClientProfilePlan } from './views/client/ClientProfilePlan'
+import { ClientPlan } from './views/client/ClientPlan'
+import { ClientProfile } from './views/client/ClientProfile'
 
 // Admin Views (Full Real Interactive Views)
 import { AdminOverview } from './views/admin/AdminOverview'
@@ -83,13 +84,16 @@ export function App() {
       return <ClientRecipients />
     }
     if (path === '/app/usage') {
-      return <ClientUsage onNavigateToPlans={() => navigate('/app/profile')} />
+      return <ClientUsage onNavigateToPlans={() => navigate('/app/plan')} />
     }
     if (path === '/app/api-keys') {
       return <ApiKeys />
     }
+    if (path === '/app/plan') {
+      return <ClientPlan />
+    }
     if (path === '/app/profile') {
-      return <ClientProfilePlan />
+      return <ClientProfile />
     }
 
     // Admin Console Routes

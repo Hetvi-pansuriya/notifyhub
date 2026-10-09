@@ -145,41 +145,6 @@ export function ApiKeys() {
     }
   }
 
-  const curlExample = `curl -X POST http://localhost:8000/api/events \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: $NOTIFYHUB_API_KEY" \\
-  -H "Idempotency-Key: $(uuidgen)" \\
-  -d '{
-    "event_type": "order_shipped",
-    "email": "customer@example.com",
-    "data": { "order_id": "1234", "customer": "Alice", "tracking": "TRK-987" }
-  }'`
-
-  const nodeExample = `const response = await fetch('http://localhost:8000/api/events', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-API-Key': process.env.NOTIFYHUB_API_KEY,
-    'Idempotency-Key': crypto.randomUUID(),
-  },
-  body: JSON.stringify({
-    event_type: 'order_shipped',
-    email: 'customer@example.com',
-    data: { order_id: '1234', customer: 'Alice', tracking: 'TRK-987' },
-  }),
-});`
-
-  const handleCopyCode = async (text, setter) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setter(true)
-      addToast('Snippet copied to clipboard', 'success')
-      setTimeout(() => setter(false), 2000)
-    } catch {
-      addToast('Could not access clipboard', 'error')
-    }
-  }
-
   return (
     <PageShell
       title="API keys"
@@ -305,103 +270,6 @@ export function ApiKeys() {
         )}
       </div>
 
-      {/* "Where do I use this key?" Explainer Card */}
-      <div className="card" style={{ padding: '28px' }}>
-        <h2 style={{ fontSize: '17px', marginBottom: '14px' }}>
-          Where do I use this key?
-        </h2>
-
-        {/* Numbered Steps */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: '14px' }}>
-            <span style={{ fontWeight: 600, color: '#ffffff', minWidth: '16px' }}>1.</span>
-            <span>Create a key here.</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: '14px' }}>
-            <span style={{ fontWeight: 600, color: '#ffffff', minWidth: '16px' }}>2.</span>
-            <span>
-              Save it on your server as an environment variable (
-              <code style={{ fontFamily: 'var(--font-mono)', color: '#ffffff' }}>NOTIFYHUB_API_KEY</code>
-              ).
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: '14px' }}>
-            <span style={{ fontWeight: 600, color: '#ffffff', minWidth: '16px' }}>3.</span>
-            <span>
-              Send it in the <code style={{ fontFamily: 'var(--font-mono)', color: '#ffffff' }}>X-API-Key</code> header when your server calls NotifyHub.
-            </span>
-          </div>
-        </div>
-
-        {/* Warning Line */}
-        <div
-          style={{
-            padding: '10px 14px',
-            marginBottom: '24px',
-            backgroundColor: 'rgba(251, 191, 36, 0.08)',
-            borderLeft: '3px solid var(--color-amber)',
-            borderRadius: '4px',
-            fontSize: '13px',
-            color: 'var(--color-amber)',
-          }}
-        >
-          Use it on your server only. Never put it in website or mobile app code.
-        </div>
-
-        {/* Example Snippets */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Curl Example */}
-          <div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '8px',
-              }}
-            >
-              <span style={{ fontSize: '13px', fontWeight: 500, color: '#ffffff' }}>
-                cURL Example
-              </span>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleCopyCode(curlExample, setCopiedCurl)}
-              >
-                {copiedCurl ? '✓ Copied' : 'Copy cURL'}
-              </button>
-            </div>
-            <pre className="code-box" style={{ overflowX: 'auto', whiteSpace: 'pre', lineHeight: 1.45 }}>
-              {curlExample}
-            </pre>
-          </div>
-
-          {/* Node.js Fetch Example */}
-          <div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '8px',
-              }}
-            >
-              <span style={{ fontSize: '13px', fontWeight: 500, color: '#ffffff' }}>
-                Node.js fetch Example
-              </span>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleCopyCode(nodeExample, setCopiedNode)}
-              >
-                {copiedNode ? '✓ Copied' : 'Copy Node.js'}
-              </button>
-            </div>
-            <pre className="code-box" style={{ overflowX: 'auto', whiteSpace: 'pre', lineHeight: 1.45 }}>
-              {nodeExample}
-            </pre>
-          </div>
-        </div>
-      </div>
-
       {/* CREATE KEY MODAL */}
       {isCreateOpen && (
         <div className="modal-backdrop">
@@ -450,7 +318,7 @@ export function ApiKeys() {
               <div>
                 <h2 style={{ marginBottom: '8px' }}>Save your API key</h2>
                 <p style={{ fontSize: '13px', marginBottom: '16px', color: 'var(--color-amber)' }}>
-                  Copy it now. For safety we only show it once.
+                  You won't be able to see this key again. Copy it now and store it securely in your environment variables.
                 </p>
 
                 <div style={{ position: 'relative', marginBottom: '20px' }}>

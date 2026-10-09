@@ -1,195 +1,270 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../../api';
+import React, { useState, useEffect, useCallback } from 'react'
+import { request } from '../../api'
+import { formatDateTime, formatRelative } from '../../utils/date'
+import { EmptyState } from '../../components/EmptyState'
+import { ErrorState } from '../../components/ErrorState'
+import { Skeleton } from '../../components/Skeleton'
+
+const STATUS_FILTERS = [
+  { label: 'All', value: null },
+  { label: 'Sent', value: 'sent' },
+  { label: 'In queue', value: 'queued' },
+  { label: 'Failed', value: 'dead' },
+]
+
+const PAGE_SIZE = 20
 
 export function ClientDeliveries({ onSelectDelivery }) {
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [deliveries, setDeliveries] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState(null)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(0)
+  const [deliveries, setDeliveries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [hasMore, setHasMore] = useState(false)
 
-  const fetchDeliveries = async () => {
-    setLoading(true);
-    let statusParam = null;
-    if (activeFilter === 'Failed') statusParam = 'dead';
-    else if (activeFilter !== 'All') statusParam = activeFilter.toLowerCase();
-
-    const res = await api.getDeliveries({ status: statusParam, limit: 50 });
-    if (res.ok && res.data) {
-      setDeliveries(res.data.items || []);
-    } else {
-      setDeliveries([]);
+  const loadDeliveries = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      let url = `/api/deliveries?limit=${PAGE_SIZE + 1}&offset=${page * PAGE_SIZE}`
+      if (filter) {
+        url += `&status=${encodeURIComponent(filter)}`
+      }
+      const res = await request(url)
+      const items = res || []
+      if (items.length > PAGE_SIZE) {
+        setHasMore(true)
+        setDeliveries(items.slice(0, PAGE_SIZE))
+      } else {
+        setHasMore(false)
+        setDeliveries(items)
+      }
+      setLoading(false)
+    } catch (err) {
+      setError(err.message || 'Failed to load deliveries')
+      setLoading(false)
     }
-    setLoading(false);
-  };
+  }, [filter, page])
 
   useEffect(() => {
-    fetchDeliveries();
-  }, [activeFilter]);
+    loadDeliveries()
+  }, [loadDeliveries])
 
-  const handleRetry = async (deliveryId) => {
-    const res = await api.retryDelivery(deliveryId);
-    if (res.ok) {
-      alert('Delivery re-queued successfully!');
-      fetchDeliveries();
-    } else {
-      alert(res.error || 'Retry rejected');
-    }
-  };
-
-  const filteredItems = deliveries.filter((d) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
+  // Filter client-side by search query if search is entered
+  const displayedDeliveries = deliveries.filter((d) => {
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
     return (
-      d.to_email?.toLowerCase().includes(q) ||
       d.id?.toLowerCase().includes(q) ||
+      d.recipient_email?.toLowerCase().includes(q) ||
+      d.rendered_subject?.toLowerCase().includes(q) ||
       d.event_type?.toLowerCase().includes(q)
-    );
-  });
+    )
+  })
 
   const getStatusBadge = (status) => {
-    const s = status?.toLowerCase();
+    const s = status?.toLowerCase()
     switch (s) {
       case 'sent':
-        return (
-          <span
-            className="badge badge-green"
-            title="Sent means our mail provider accepted it. It can still take a moment to reach the inbox."
-            style={{ cursor: 'help' }}
-          >
-            Sent ℹ
-          </span>
-        );
+        return <span className="badge badge-green">Sent</span>
       case 'queued':
-        return <span className="badge badge-orange">Queued</span>;
+        return <span className="badge badge-orange">In queue</span>
       case 'dead':
       case 'failed':
-        return <span className="badge badge-red">Failed</span>;
+        return <span className="badge badge-red">Failed</span>
       case 'skipped':
-        return <span className="badge badge-gray">Skipped</span>;
+        return <span className="badge badge-gray">Skipped</span>
       case 'expired':
-        return <span className="badge badge-gray" style={{ background: '#251e33', color: '#c084fc' }}>Expired</span>;
+        return <span className="badge badge-gray">Expired</span>
       default:
-        return <span className="badge badge-gray">{status}</span>;
+        return <span className="badge badge-gray">{status}</span>
     }
-  };
-
-  const getRelativeTime = (isoString) => {
-    if (!isoString) return 'recently';
-    const diffMs = Date.now() - new Date(isoString).getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return 'just now';
-    if (diffMin < 60) return `${diffMin} min ago`;
-    const diffHours = Math.floor(diffMin / 60);
-    if (diffHours < 24) return `${diffHours} hr ago`;
-    return `${Math.floor(diffHours / 24)} d ago`;
-  };
+  }
 
   return (
-    <div className="client-deliveries">
-      <div className="page-header">
-        <div className="page-header-text">
-          <h1>Deliveries</h1>
-          <p>Every email you asked us to send, and what happened to it.</p>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Header */}
+      <div>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+          Deliveries
+        </h1>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
+          Historical record of all emails dispatched through the NotifyHub API
+        </p>
       </div>
 
-      <div className="card">
-        {/* Controls row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {['All', 'Queued', 'Sent', 'Failed', 'Skipped', 'Expired'].map((filter) => (
-              <button
-                key={filter}
-                className={`filter-pill ${activeFilter === filter ? 'active' : ''}`}
-                onClick={() => setActiveFilter(filter)}
-              >
-                {filter}
-              </button>
-            ))}
+      {/* Main Table Card */}
+      <div
+        style={{
+          backgroundColor: 'var(--bg-surface-card, #12141a)',
+          border: '1px solid var(--border-subtle, #1f232f)',
+          borderRadius: 'var(--radius-lg, 16px)',
+          padding: '24px',
+        }}
+      >
+        {/* Filter and Search toolbar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginBottom: '20px',
+          }}
+        >
+          {/* Status filter tabs */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {STATUS_FILTERS.map((f) => {
+              const active = filter === f.value
+              return (
+                <button
+                  key={f.label}
+                  type="button"
+                  className={`filter-pill ${active ? 'active' : ''}`}
+                  onClick={() => {
+                    setFilter(f.value)
+                    setPage(0)
+                  }}
+                >
+                  {f.label}
+                </button>
+              )
+            })}
           </div>
 
-          <div style={{ width: '280px' }}>
+          {/* Search box */}
+          <div style={{ minWidth: '240px' }}>
             <input
               type="text"
-              className="search-input"
-              placeholder="Search by email or ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search recipient, event or ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '7px 14px',
+                backgroundColor: '#161922',
+                border: '1px solid var(--border-subtle, #1f232f)',
+                borderRadius: 'var(--radius-full, 9999px)',
+                color: '#ffffff',
+                fontSize: '12.5px',
+                outline: 'none',
+              }}
             />
           </div>
         </div>
 
-        {/* Deliveries Table */}
-        <div className="table-responsive">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Recipient</th>
-                <th>Event</th>
-                <th>Status</th>
-                <th>Attempts</th>
-                <th>When</th>
-                <th style={{ textAlign: 'right' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item) => (
-                <tr key={item.id}>
-                  <td style={{ color: '#fff', fontWeight: 500 }}>
-                    {item.to_email}
-                  </td>
-                  <td>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#cbd5e1' }}>
-                      {item.event_type || 'order_shipped'}
-                    </span>
-                  </td>
-                  <td>{getStatusBadge(item.status)}</td>
-                  <td>{item.attempt_count ?? 1}</td>
-                  <td style={{ color: '#8c93a7' }}>
-                    {getRelativeTime(item.created_at)}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {item.status?.toLowerCase() === 'dead' ? (
+        {/* Content area */}
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <Skeleton variant="table-row" count={5} />
+          </div>
+        ) : error ? (
+          <ErrorState message={error} onRetry={loadDeliveries} />
+        ) : displayedDeliveries.length === 0 ? (
+          <EmptyState
+            title="No deliveries yet"
+            description="Emails sent through the API will appear here."
+            style={{ minHeight: '220px' }}
+          />
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-subtle, #1f232f)', color: 'var(--text-muted, #585f73)' }}>
+                  <th style={{ padding: '10px 12px', fontWeight: 500 }}>Status</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 500 }}>Recipient</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 500 }}>Event & Subject</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 500 }}>Attempts</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 500 }}>Created</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 500, textAlign: 'right' }}>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedDeliveries.map((item) => (
+                  <tr
+                    key={item.id}
+                    onClick={() => onSelectDelivery && onSelectDelivery(item)}
+                    style={{
+                      borderBottom: '1px solid var(--border-subtle, #1f232f)',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.12s',
+                    }}
+                  >
+                    <td style={{ padding: '12px' }}>{getStatusBadge(item.status)}</td>
+                    <td style={{ padding: '12px', color: '#ffffff', fontWeight: 500 }}>
+                      {item.recipient_email || '—'}
+                    </td>
+                    <td style={{ padding: '12px', color: 'var(--text-secondary, #8c93a7)' }}>
+                      <div style={{ fontWeight: 500, color: '#f1f3f9' }}>{item.event_type || 'default'}</div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted, #585f73)', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.rendered_subject || '—'}
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px', color: 'var(--text-secondary, #8c93a7)' }}>
+                      {item.attempt_count ?? 0}
+                    </td>
+                    <td style={{ padding: '12px', color: 'var(--text-muted, #585f73)', whiteSpace: 'nowrap' }}>
+                      {formatRelative(item.created_at)}
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'right' }}>
                       <button
+                        type="button"
                         className="btn-action-small"
-                        onClick={() => handleRetry(item.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onSelectDelivery && onSelectDelivery(item)
+                        }}
                       >
-                        Send again
+                        Inspect
                       </button>
-                    ) : (
-                      <button
-                        className="btn-action-small"
-                        onClick={() => onSelectDelivery(item)}
-                      >
-                        View
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {!loading && filteredItems.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '36px', color: '#8c93a7' }}>
-                    No deliveries found. Use "+ Send Event" in the top bar to dispatch an event!
-                  </td>
-                </tr>
-              )}
-              {loading && (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '36px', color: '#8c93a7' }}>
-                    Loading deliveries from database...
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        <div style={{ marginTop: '16px', fontSize: '12px', color: '#8c93a7', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: '#4ade80', fontSize: '14px' }}>ℹ</span>
-          <span>Sent means our mail provider accepted it. It can still take a moment to reach the inbox.</span>
-        </div>
+        {/* Real Pagination footer */}
+        {!loading && !error && (deliveries.length > 0 || page > 0) && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '20px',
+              paddingTop: '16px',
+              borderTop: '1px solid var(--border-subtle, #1f232f)',
+              fontSize: '12.5px',
+              color: 'var(--text-muted, #585f73)',
+            }}
+          >
+            <div>Page {page + 1}</div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                style={{ padding: '4px 12px', fontSize: '12px' }}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={!hasMore}
+                onClick={() => setPage((p) => p + 1)}
+                style={{ padding: '4px 12px', fontSize: '12px' }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }

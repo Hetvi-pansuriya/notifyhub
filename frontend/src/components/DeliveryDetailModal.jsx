@@ -1,146 +1,281 @@
-import React, { useState } from 'react';
-import { api } from '../api';
+import React, { useState } from 'react'
+import { request, ApiError } from '../api'
+import { formatDateTime } from '../utils/date'
 
 export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
-  const [retrying, setRetrying] = useState(false);
-  const [retryResult, setRetryResult] = useState(null);
+  const [retrying, setRetrying] = useState(false)
+  const [retryResult, setRetryResult] = useState(null)
+  const [showRawPayload, setShowRawPayload] = useState(false)
 
-  if (!delivery) return null;
+  if (!delivery) return null
 
   const handleRetry = async () => {
-    setRetrying(true);
-    setRetryResult(null);
-    const res = await api.retryDelivery(delivery.id);
-    setRetrying(false);
-    setRetryResult(res);
-    if (res.ok && onRetried) {
-      onRetried(delivery.id);
+    setRetrying(true)
+    setRetryResult(null)
+    try {
+      await request(`/api/deliveries/${delivery.id}/retry`, { method: 'POST' })
+      setRetryResult({ ok: true, message: 'Delivery re-queued successfully!' })
+      if (onRetried) onRetried(delivery.id)
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setRetryResult({ ok: false, message: 'Delivery is already queued or cannot be retried.' })
+      } else {
+        setRetryResult({ ok: false, message: err.message || 'Retry failed' })
+      }
+    } finally {
+      setRetrying(false)
     }
-  };
+  }
 
   const getStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
-      case 'sent': return 'badge-green';
-      case 'queued': return 'badge-orange';
+      case 'sent':
+        return 'badge-green'
+      case 'queued':
+        return 'badge-orange'
       case 'dead':
-      case 'failed': return 'badge-red';
-      default: return 'badge-gray';
+      case 'failed':
+        return 'badge-red'
+      default:
+        return 'badge-gray'
     }
-  };
+  }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '20px',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: '#12141a',
+          border: '1px solid #1f232f',
+          borderRadius: '16px',
+          width: '100%',
+          maxWidth: '680px',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div
+          style={{
+            padding: '20px 24px',
+            borderBottom: '1px solid #1f232f',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <div>
-            <div className="modal-title">Delivery Details</div>
-            <div style={{ fontSize: '12px', color: '#8c93a7', marginTop: '2px' }}>ID: {delivery.id}</div>
+            <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+              Delivery Details
+            </h2>
+            <div style={{ fontSize: '11px', color: '#585f73', marginTop: '2px', fontFamily: 'monospace' }}>
+              {delivery.id}
+            </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>&times;</button>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#8c93a7',
+              fontSize: '20px',
+              cursor: 'pointer',
+              lineHeight: 1,
+            }}
+          >
+            &times;
+          </button>
         </div>
 
-        <div className="modal-body">
-          {/* Header summary */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', background: '#161922', padding: '16px', borderRadius: '12px', border: '1px solid #202431' }}>
+        {/* Modal Body */}
+        <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Top meta grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '12px',
+              background: '#161922',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid #202431',
+            }}
+          >
             <div>
               <div style={{ fontSize: '11px', color: '#585f73' }}>Status</div>
               <div style={{ marginTop: '4px' }}>
-                <span
-                  className={`badge ${getStatusBadge(delivery.status)}`}
-                  title={delivery.status?.toLowerCase() === 'sent' ? 'Sent means our mail provider accepted it. It can still take a moment to reach the inbox.' : undefined}
-                  style={delivery.status?.toLowerCase() === 'sent' ? { cursor: 'help' } : {}}
-                >
+                <span className={`badge ${getStatusBadge(delivery.status)}`}>
                   {delivery.status}
                 </span>
-                {delivery.status?.toLowerCase() === 'sent' && (
-                  <div style={{ fontSize: '11px', color: '#8c93a7', marginTop: '4px', lineHeight: 1.3 }}>
-                    Sent means our mail provider accepted it. It can still take a moment to reach the inbox.
-                  </div>
-                )}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '11px', color: '#585f73' }}>Priority</div>
-              <div style={{ fontWeight: 600, marginTop: '4px', color: delivery.priority === 2 ? '#f59e0b' : '#fff' }}>
-                {delivery.priority === 2 ? 'High (2)' : 'Normal (1)'}
               </div>
             </div>
             <div>
               <div style={{ fontSize: '11px', color: '#585f73' }}>Attempts</div>
-              <div style={{ fontWeight: 600, marginTop: '4px' }}>
-                {delivery.attempt_count || 0} / {(delivery.retry_schedule?.length || 0) + 1}
+              <div style={{ fontWeight: 600, marginTop: '4px', color: '#ffffff' }}>
+                {delivery.attempt_count ?? 0}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', color: '#585f73' }}>Priority</div>
+              <div style={{ fontWeight: 600, marginTop: '4px', color: '#ffffff' }}>
+                {delivery.priority ?? 1}
               </div>
             </div>
           </div>
 
-          {/* Recipient & Subject */}
-          <div className="form-group">
-            <label className="form-label">Recipient</label>
-            <input className="form-input" readOnly value={delivery.to_email || ''} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Rendered Subject</label>
-            <input className="form-input" readOnly value={delivery.rendered_subject || 'N/A'} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Rendered Body</label>
-            <textarea className="form-textarea" readOnly rows={3} value={delivery.rendered_body || 'N/A'} />
-          </div>
-
-          {delivery.sensitive && (
-            <div className="info-banner" style={{ borderLeft: '3px solid #f59e0b' }}>
-              <span>🔒 This is a sensitive delivery. Subject, body, and payload are redacted in storage for privacy.</span>
+          {/* Key details */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Client ID</div>
+              <div style={{ fontSize: '13px', color: '#f1f3f9', fontFamily: 'monospace' }}>
+                {delivery.client_id || '—'}
+              </div>
             </div>
-          )}
-
-          {delivery.last_error && (
-            <div className="info-banner" style={{ borderLeft: '3px solid #ef4444', color: '#f87171' }}>
-              <span>Last Error: {delivery.last_error}</span>
+            <div>
+              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Event Type</div>
+              <div style={{ fontSize: '13px', color: '#f1f3f9', fontWeight: 500 }}>
+                {delivery.event_type || 'default'}
+              </div>
             </div>
-          )}
+            <div>
+              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Recipient Email</div>
+              <div style={{ fontSize: '13px', color: '#f1f3f9', fontWeight: 500 }}>
+                {delivery.recipient_email || delivery.to_email || '—'}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Created At</div>
+              <div style={{ fontSize: '13px', color: '#f1f3f9' }}>
+                {formatDateTime(delivery.created_at)}
+              </div>
+            </div>
+            {delivery.sent_at && (
+              <div>
+                <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Sent At</div>
+                <div style={{ fontSize: '13px', color: '#34d399' }}>
+                  {formatDateTime(delivery.sent_at)}
+                </div>
+              </div>
+            )}
+            {delivery.next_attempt_at && delivery.status === 'queued' && (
+              <div>
+                <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Next Attempt At</div>
+                <div style={{ fontSize: '13px', color: '#fbbf24' }}>
+                  {formatDateTime(delivery.next_attempt_at)}
+                </div>
+              </div>
+            )}
+            {delivery.idempotency_key && (
+              <div style={{ gridColumn: 'span 2' }}>
+                <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Idempotency Key</div>
+                <div style={{ fontSize: '12px', color: '#8c93a7', fontFamily: 'monospace' }}>
+                  {delivery.idempotency_key}
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* Attempt history */}
+          {/* Subject & Body */}
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#fff' }}>
-              Attempt History ({delivery.attempts?.length || 0})
+            <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Rendered Subject</div>
+            <div
+              style={{
+                backgroundColor: '#161922',
+                border: '1px solid #202431',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '13px',
+                color: '#ffffff',
+              }}
+            >
+              {delivery.rendered_subject || 'N/A'}
             </div>
-            {delivery.attempts && delivery.attempts.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {delivery.attempts.map((att) => (
-                  <div
-                    key={att.attempt_no}
-                    style={{
-                      background: '#151720',
-                      border: '1px solid #1f232f',
-                      borderRadius: '8px',
-                      padding: '10px 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      fontSize: '12.5px',
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontWeight: 600, color: '#fff' }}>Attempt #{att.attempt_no}</span>
-                      <span style={{ color: '#585f73', marginLeft: '10px' }}>
-                        {att.created_at ? new Date(att.created_at).toLocaleTimeString() : ''}
-                      </span>
-                      {att.latency_ms !== null && att.latency_ms !== undefined && (
-                        <span style={{ color: '#585f73', marginLeft: '8px' }}>({att.latency_ms}ms)</span>
-                      )}
-                    </div>
-                    <div>
-                      <span className={`badge ${att.outcome === 'success' ? 'badge-green' : 'badge-red'}`}>
-                        {att.outcome}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ fontSize: '12px', color: '#585f73' }}>No attempts recorded yet.</div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Rendered Body</div>
+            <pre
+              style={{
+                backgroundColor: '#161922',
+                border: '1px solid #202431',
+                borderRadius: '8px',
+                padding: '12px',
+                fontSize: '12px',
+                color: '#8c93a7',
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'inherit',
+                maxHeight: '140px',
+                overflowY: 'auto',
+                margin: 0,
+              }}
+            >
+              {delivery.rendered_body || 'N/A'}
+            </pre>
+          </div>
+
+          {/* Error Message if present */}
+          {delivery.last_error && (
+            <div
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '8px',
+                padding: '12px',
+                color: '#f87171',
+                fontSize: '12px',
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: '2px' }}>Last Error:</div>
+              <div>{delivery.last_error}</div>
+            </div>
+          )}
+
+          {/* Raw Payload Toggle */}
+          <div>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setShowRawPayload(!showRawPayload)}
+              style={{ fontSize: '12px', padding: '4px 12px' }}
+            >
+              {showRawPayload ? 'Hide raw delivery JSON' : 'View raw delivery JSON'}
+            </button>
+            {showRawPayload && (
+              <pre
+                style={{
+                  marginTop: '8px',
+                  backgroundColor: '#0c0d12',
+                  border: '1px solid #1f232f',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  fontSize: '11px',
+                  color: '#8c93a7',
+                  maxHeight: '160px',
+                  overflowY: 'auto',
+                  fontFamily: 'monospace',
+                }}
+              >
+                {JSON.stringify(delivery, null, 2)}
+              </pre>
             )}
           </div>
 
@@ -149,28 +284,43 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
               style={{
                 padding: '10px 14px',
                 borderRadius: '8px',
-                fontSize: '12.5px',
-                backgroundColor: retryResult.ok ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                border: `1px solid ${retryResult.ok ? '#10b981' : '#ef4444'}`,
+                fontSize: '12px',
+                backgroundColor: retryResult.ok ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                 color: retryResult.ok ? '#34d399' : '#f87171',
+                border: `1px solid ${retryResult.ok ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
               }}
             >
-              {retryResult.ok ? 'Delivery reset to queued! Worker will pick it up.' : retryResult.error}
+              {retryResult.message}
             </div>
           )}
         </div>
 
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>
+        {/* Modal Footer */}
+        <div
+          style={{
+            padding: '16px 24px',
+            borderTop: '1px solid #1f232f',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '12px',
+          }}
+        >
+          <button type="button" className="btn-secondary" onClick={onClose}>
             Close
           </button>
           {delivery.status === 'dead' && !delivery.sensitive && (
-            <button className="btn-primary" onClick={handleRetry} disabled={retrying}>
-              {retrying ? 'Retrying...' : 'Retry from DLQ'}
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleRetry}
+              disabled={retrying}
+            >
+              {retrying ? 'Retrying...' : 'Send again'}
             </button>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }

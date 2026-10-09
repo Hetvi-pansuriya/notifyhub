@@ -1,208 +1,273 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../../api';
-import { DailyBarChart, RateLimitChart } from '../../components/Charts';
+import React, { useState, useEffect, useCallback } from 'react'
+import { request } from '../../api'
+import { userTimezone } from '../../utils/date'
+import { StatCard } from '../../components/StatCard'
+import { BarChart } from '../../components/BarChart'
+import { RateLimitChart } from '../../components/RateLimitChart'
+import { RangePicker, getRangePayload } from '../../components/RangePicker'
+import { ErrorState } from '../../components/ErrorState'
+import { Skeleton } from '../../components/Skeleton'
 
-export function ClientUsage({ onNavigateToPlans }) {
-  const [timeFilter, setTimeFilter] = useState('Last month');
-  const [loading, setLoading] = useState(true);
-  const [clientInfo, setClientInfo] = useState(null);
-  const [metrics, setMetrics] = useState({
+/**
+ * Reusable Usage view component.
+ * Can be used in Client console (/app/usage) or embedded in Admin Client Detail (/admin/clients/:id).
+ */
+export function ClientUsage({ clientId = null, onNavigateToPlans }) {
+  const [rangeKey, setRangeKey] = useState('7d')
+  const [range, setRange] = useState(getRangePayload('7d'))
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const [summary, setSummary] = useState({
     sent: 0,
-    queued: 0,
-    dead: 0,
-    successRate: '100%',
-  });
-  const [dailyData, setDailyData] = useState([]);
-  const [rateLimitData, setRateLimitData] = useState([]);
+    success_rate: 1.0,
+    rejected_429: 0,
+  })
+  const [seriesData, setSeriesData] = useState([])
+  const [rateData, setRateData] = useState([])
+  const [planInfo, setPlanInfo] = useState({
+    name: 'Starter',
+    monthly_email_limit: 10000,
+    rate_limit_per_sec: 50,
+    sent_this_month: 0,
+  })
+
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { from, to, bucket } = range
+      const clientParam = clientId ? `&client_id=${encodeURIComponent(clientId)}` : ''
+      const clientParamOnly = clientId ? `?client_id=${encodeURIComponent(clientId)}` : ''
+
+      // Determine endpoints based on whether we are in admin mode (clientId provided) or client mode
+      const summaryUrl = clientId
+        ? `/admin/stats/summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${clientParam}`
+        : `/api/stats/summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+
+      const seriesUrl = clientId
+        ? `/admin/stats/series?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&bucket=${encodeURIComponent(bucket)}&metric=sent&tz=${encodeURIComponent(userTimezone)}${clientParam}`
+        : `/api/stats/series?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&bucket=${encodeURIComponent(bucket)}&metric=sent&tz=${encodeURIComponent(userTimezone)}`
+
+      const rateUrl = clientId
+        ? `/admin/stats/rate?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&bucket=${encodeURIComponent(bucket)}&tz=${encodeURIComponent(userTimezone)}${clientParam}`
+        : `/api/stats/rate?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&bucket=${encodeURIComponent(bucket)}&tz=${encodeURIComponent(userTimezone)}`
+
+      const planPromise = clientId
+        ? request(`/admin/clients/${encodeURIComponent(clientId)}`)
+        : request('/console/plan')
+
+      const [sumRes, serRes, rateRes, plRes] = await Promise.all([
+        request(summaryUrl),
+        request(seriesUrl),
+        request(rateUrl),
+        planPromise,
+      ])
+
+      setSummary(sumRes || {})
+      setSeriesData(serRes?.series || [])
+      setRateData(rateRes || [])
+
+      if (clientId) {
+        // Admin client detail structure
+        const c = plRes || {}
+        setPlanInfo({
+          name: c.plan?.name || 'Custom',
+          monthly_email_limit: c.monthly_email_limit || c.plan?.monthly_email_limit || 10000,
+          rate_limit_per_sec: c.rate_limit_per_sec || c.plan?.rate_limit_per_sec || 50,
+          sent_this_month: c.sent_this_month || 0,
+        })
+      } else {
+        // Client console plan endpoint structure
+        const p = plRes || {}
+        setPlanInfo({
+          name: p.plan?.name || 'Starter',
+          monthly_email_limit: p.plan?.monthly_email_limit || 10000,
+          rate_limit_per_sec: p.plan?.rate_limit_per_sec || 50,
+          sent_this_month: p.usage?.sent_this_month || 0,
+        })
+      }
+
+      setLoading(false)
+    } catch (err) {
+      setError(err.message || 'Failed to load usage statistics')
+      setLoading(false)
+    }
+  }, [clientId, range])
 
   useEffect(() => {
-    async function loadUsage() {
-      setLoading(true);
-      const [meRes, mRes, dRes] = await Promise.all([
-        api.getMe(),
-        api.getClientMetrics(),
-        api.getDeliveries({ limit: 100 }),
-      ]);
+    loadData()
+  }, [loadData])
 
-      const client = meRes.ok && meRes.data ? meRes.data : { rate_limit_per_sec: 50 };
-      setClientInfo(client);
+  const handleRangeChange = (newRange) => {
+    setRangeKey(newRange.key)
+    setRange(newRange)
+  }
 
-      if (mRes.ok && mRes.data) {
-        const counts = mRes.data.status_counts || {};
-        const sent = counts.sent || 0;
-        const rate = mRes.data.success_rate !== undefined ? `${(mRes.data.success_rate * 100).toFixed(1)}%` : '100%';
-        setMetrics({
-          sent,
-          queued: counts.queued || 0,
-          dead: counts.dead || 0,
-          successRate: rate,
-        });
-      }
-
-      // Compute daily distribution from real deliveries
-      const deliveries = dRes.ok && dRes.data ? dRes.data : [];
-      const dayCounts = {};
-      const ratePoints = [];
-
-      deliveries.forEach((d) => {
-        const dt = new Date(d.created_at || Date.now());
-        const dateKey = dt.toISOString().split('T')[0];
-        dayCounts[dateKey] = (dayCounts[dateKey] || 0) + 1;
-
-        const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        ratePoints.push({ time: timeStr, value: 1 });
-      });
-
-      // Prepare 14 daily bars
-      const today = new Date();
-      const bars = [];
-      for (let i = 13; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().split('T')[0];
-        bars.push({ value: dayCounts[key] || (i === 0 ? deliveries.length : 0) });
-      }
-      setDailyData(bars);
-
-      // Prepare rate limit points
-      if (deliveries.length > 0) {
-        const groupedByHour = {};
-        deliveries.forEach(d => {
-          const t = new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          groupedByHour[t] = (groupedByHour[t] || 0) + 1;
-        });
-        const points = Object.entries(groupedByHour).map(([time, value]) => ({ time, value }));
-        setRateLimitData(points.length > 0 ? points : [{ time: 'Now', value: deliveries.length }]);
-      } else {
-        setRateLimitData([
-          { time: '09:00', value: 0 },
-          { time: '10:00', value: 0 },
-          { time: '11:00', value: 0 },
-          { time: 'Now', value: 0 },
-        ]);
-      }
-
-      setLoading(false);
-    }
-    loadUsage();
-  }, [timeFilter]);
-
-  const rateLimit = clientInfo?.rate_limit_per_sec || 50;
-  const planName = rateLimit >= 100 ? 'Scale' : (rateLimit >= 50 ? 'Growth' : 'Starter');
-  const planLimit = rateLimit >= 100 ? 500000 : (rateLimit >= 50 ? 100000 : 10000);
-  const planUsagePct = Math.min(100, (metrics.sent / planLimit) * 100);
+  const monthlyLimit = planInfo.monthly_email_limit || 10000
+  const sentMonth = planInfo.sent_this_month || 0
+  const pct = Math.min(100, Math.round((sentMonth / monthlyLimit) * 100))
+  const remaining = Math.max(0, monthlyLimit - sentMonth)
 
   return (
-    <div className="client-usage">
-      <div className="page-header">
-        <div className="page-header-text">
-          <h1>Usage</h1>
-          <p>Live metrics and capacity tracking for your account.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {/* Header with Range Picker */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+            Usage & Analytics
+          </h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
+            Telemetry metrics aligned to your local timezone ({userTimezone})
+          </p>
         </div>
+        <RangePicker selectedKey={rangeKey} onChange={handleRangeChange} />
       </div>
 
-      {/* Filter pills */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-        {['Last 7 days', 'Last month', 'Last 3 months', 'Last year'].map((f) => (
-          <button
-            key={f}
-            className={`filter-pill ${timeFilter === f ? 'active' : ''}`}
-            onClick={() => setTimeFilter(f)}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            <Skeleton variant="card" height="110px" />
+            <Skeleton variant="card" height="110px" />
+            <Skeleton variant="card" height="110px" />
+          </div>
+          <Skeleton variant="card" height="110px" />
+          <Skeleton variant="card" height="260px" />
+          <Skeleton variant="card" height="260px" />
+        </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={loadData} />
+      ) : (
+        <>
+          {/* Summary Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            <StatCard
+              title="Total Emails Sent"
+              value={summary.sent ?? 0}
+              subtext={`Delivered in ${range.label}`}
+              badgeType="green"
+            />
+            <StatCard
+              title="Delivery Success Rate"
+              value={summary.success_rate !== undefined ? `${(summary.success_rate * 100).toFixed(1)}%` : '100%'}
+              subtext="Successfully received by provider"
+              badgeType="blue"
+            />
+            <StatCard
+              title="Rate Limit Hits (429)"
+              value={summary.rejected_429 ?? 0}
+              subtext="Requests rejected by throttle"
+              badgeType={summary.rejected_429 > 0 ? 'red' : 'gray'}
+            />
+          </div>
+
+          {/* Monthly Plan Usage Meter Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-surface-card, #12141a)',
+              border: '1px solid var(--border-subtle, #1f232f)',
+              borderRadius: 'var(--radius-lg, 16px)',
+              padding: '24px',
+            }}
           >
-            {f}
-          </button>
-        ))}
-      </div>
-
-      {/* 4 Stat Cards */}
-      <div className="stat-cards-grid">
-        <div className="stat-card">
-          <div className="stat-card-label">Emails sent</div>
-          <div className="stat-card-value">{metrics.sent.toLocaleString()}</div>
-          <div className="stat-card-desc">delivered & queued</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-card-label">Delivered</div>
-          <div className="stat-card-value" style={{ color: 'var(--color-green-text)' }}>
-            {metrics.successRate}
-          </div>
-          <div className="stat-card-desc">success rate</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-card-label">Dead letters</div>
-          <div className="stat-card-value" style={{ color: metrics.dead > 0 ? 'var(--color-red-text)' : 'var(--color-green-text)' }}>
-            {metrics.dead}
-          </div>
-          <div className="stat-card-desc">exhausted retries</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-card-label">Configured limit</div>
-          <div className="stat-card-value" style={{ color: 'var(--color-orange-text)' }}>
-            {rateLimit}/s
-          </div>
-          <div className="stat-card-desc">{planName} plan cap</div>
-        </div>
-      </div>
-
-      {/* Middle row: Bar Chart & Plan Usage */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '20px', marginBottom: '24px' }}>
-        <div className="card" style={{ marginBottom: 0 }}>
-          <div className="card-header">
-            <div>
-              <div className="card-title">Emails sent per day</div>
-            </div>
-          </div>
-          <DailyBarChart data={dailyData} height={190} />
-        </div>
-
-        <div className="card" style={{ marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div className="card-header">
-              <div className="card-title">Plan usage</div>
-            </div>
-
-            <div style={{ fontSize: '26px', fontWeight: 700, color: '#ffffff', marginBottom: '12px' }}>
-              {metrics.sent.toLocaleString()} <span style={{ fontSize: '14px', color: '#8c93a7', fontWeight: 400 }}>of {planLimit.toLocaleString()}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff' }}>
+                  Monthly Plan Quota ({planInfo.name})
+                </div>
+                <div style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', marginTop: '2px' }}>
+                  {sentMonth.toLocaleString()} of {monthlyLimit.toLocaleString()} monthly emails used ({pct}%)
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>
+                  {remaining.toLocaleString()}
+                </span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)', marginLeft: '4px' }}>
+                  remaining
+                </span>
+              </div>
             </div>
 
             {/* Progress bar */}
-            <div style={{ width: '100%', height: '8px', background: '#202431', borderRadius: '9999px', overflow: 'hidden', marginBottom: '14px' }}>
-              <div style={{ width: `${Math.max(2, planUsagePct)}%`, height: '100%', background: '#ffffff', borderRadius: '9999px' }}></div>
-            </div>
-
-            <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '18px' }}>
-              Current billing period · {planUsagePct}% utilized
-            </div>
-
-            <div style={{ fontSize: '13px', color: '#8c93a7', background: '#161922', padding: '12px 14px', borderRadius: '10px', border: '1px solid #202431' }}>
-              You are on the {planName} plan. Need higher throughput? You can upgrade anytime.
-            </div>
-          </div>
-
-          <div style={{ marginTop: '20px' }}>
-            <button className="btn-primary" onClick={onNavigateToPlans}>
-              See plans
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom: Rate limit chart */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <div className="card-title">Rate limit</div>
-            <div className="card-subtitle">
-              Requests per second throughput. Configured limit: {rateLimit}/sec.
+            <div
+              style={{
+                width: '100%',
+                height: '8px',
+                backgroundColor: '#1b1e2a',
+                borderRadius: '9999px',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${pct}%`,
+                  height: '100%',
+                  backgroundColor: pct > 90 ? '#ef4444' : pct > 75 ? '#f59e0b' : '#3b82f6',
+                  borderRadius: '9999px',
+                  transition: 'width 0.3s ease',
+                }}
+              />
             </div>
           </div>
-        </div>
 
-        <RateLimitChart data={rateLimitData} limit={rateLimit} height={190} />
-      </div>
+          {/* Emails Sent BarChart Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-surface-card, #12141a)',
+              border: '1px solid var(--border-subtle, #1f232f)',
+              borderRadius: 'var(--radius-lg, 16px)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                  Emails Sent
+                </h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)', margin: '2px 0 0 0' }}>
+                  Dispatched volume grouped by {range.bucket} ({range.label})
+                </p>
+              </div>
+            </div>
+
+            <BarChart
+              data={seriesData}
+              height={220}
+              barColor="#3b82f6"
+              unit="emails"
+              emptyMessage="No emails were dispatched during this period."
+            />
+          </div>
+
+          {/* Rate Limit & Throttle Chart Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-surface-card, #12141a)',
+              border: '1px solid var(--border-subtle, #1f232f)',
+              borderRadius: 'var(--radius-lg, 16px)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                  Rate Limiting & Throttle Activity
+                </h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)', margin: '2px 0 0 0' }}>
+                  Peak intake req/sec vs configured limit ({planInfo.rate_limit_per_sec}/s). Red markers indicate 429 rejections.
+                </p>
+              </div>
+            </div>
+
+            <RateLimitChart
+              data={rateData}
+              rateLimit={planInfo.rate_limit_per_sec || 50}
+              height={220}
+            />
+          </div>
+        </>
+      )}
     </div>
-  );
+  )
 }
