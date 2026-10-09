@@ -248,3 +248,24 @@ button {
   font-size: 13px;
   border: 1px solid #282e3d;
 }
+
+/* Loading Skeleton Shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(24, 27, 36, 0.7) 0%,
+    rgba(38, 43, 58, 0.9) 50%,
+    rgba(24, 27, 36, 0.7) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

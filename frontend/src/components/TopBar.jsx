@@ -1,21 +1,20 @@
 import React from 'react'
 import { useAuth } from '../auth'
 
-export function Topbar({ onOpenSendEventModal }) {
+export function Topbar() {
   const { user } = useAuth()
   const initial = user?.name ? user.name[0].toUpperCase() : (user?.email ? user.email[0].toUpperCase() : 'U')
-  const isClient = user?.role !== 'admin'
 
   return (
     <header
       style={{
-        height: 'var(--topbar-height)',
-        borderBottom: '1px solid var(--color-border)',
+        height: '60px',
+        borderBottom: '1px solid var(--border-subtle, #1f232f)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 32px',
-        backgroundColor: 'var(--color-page)',
+        backgroundColor: 'var(--bg-root, #0a0b0e)',
         position: 'sticky',
         top: 0,
         zIndex: 100,
@@ -29,12 +28,12 @@ export function Topbar({ onOpenSendEventModal }) {
           style={{
             width: '100%',
             padding: '8px 16px 8px 36px',
-            backgroundColor: 'var(--color-card)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-pill)',
-            color: 'var(--color-text)',
+            backgroundColor: 'var(--bg-surface-card, #12141a)',
+            border: '1px solid var(--border-subtle, #1f232f)',
+            borderRadius: 'var(--radius-full, 9999px)',
+            color: 'var(--text-main, #f1f3f9)',
             fontSize: '13px',
-            fontFamily: 'var(--font-family)',
+            fontFamily: 'inherit',
             outline: 'none',
           }}
         />
@@ -43,7 +42,7 @@ export function Topbar({ onOpenSendEventModal }) {
           height="15"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="var(--color-muted)"
+          stroke="var(--text-muted, #585f73)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -61,29 +60,14 @@ export function Topbar({ onOpenSendEventModal }) {
 
       {/* Right controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {isClient && onOpenSendEventModal && (
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={onOpenSendEventModal}
-            style={{ fontWeight: 600 }}
-          >
-            + Send Event
-          </button>
-        )}
-
-        {/* Status indicator pill */}
-        <div className="status-pill status-green">
-          All systems running
-        </div>
-
         {/* User avatar circle */}
         <div
           style={{
             width: '32px',
             height: '32px',
             borderRadius: '50%',
-            backgroundColor: 'var(--color-card)',
-            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--bg-surface-card, #12141a)',
+            border: '1px solid var(--border-subtle, #1f232f)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

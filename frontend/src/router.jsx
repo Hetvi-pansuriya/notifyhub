@@ -49,6 +49,38 @@ export function useRoute() {
   return useContext(RouterContext)
 }
 
+/**
+ * Matches a route pattern (e.g., '/admin/clients/:id') against a target path.
+ * Returns an object with extracted parameters if matched, or null otherwise.
+ */
+export function matchRoute(pattern, currentPath) {
+  if (!pattern || !currentPath) return null
+  const patternSegments = pattern.split('/').filter(Boolean)
+  const pathSegments = currentPath.split('/').filter(Boolean)
+
+  if (patternSegments.length !== pathSegments.length) {
+    return null
+  }
+
+  const params = {}
+  for (let i = 0; i < patternSegments.length; i++) {
+    const pSeg = patternSegments[i]
+    const cSeg = pathSegments[i]
+    if (pSeg.startsWith(':')) {
+      params[pSeg.slice(1)] = decodeURIComponent(cSeg)
+    } else if (pSeg !== cSeg) {
+      return null
+    }
+  }
+  return params
+}
+
+export function useParams(pattern) {
+  const { path } = useRoute()
+  if (!pattern) return {}
+  return matchRoute(pattern, path) || {}
+}
+
 export function Link({ to, children, className = '', ...props }) {
   const { navigate } = useRoute()
 

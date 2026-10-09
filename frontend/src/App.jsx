@@ -29,7 +29,6 @@ import { AdminAuditLog } from './views/admin/AdminAuditLog'
 import { AdminSettings } from './views/admin/AdminSettings'
 
 // Global Modals
-import { SendEventModal } from './components/SendEventModal'
 import { DeliveryDetailModal } from './components/DeliveryDetailModal'
 
 export function App() {
@@ -37,7 +36,6 @@ export function App() {
   const { path, navigate } = useRoute()
 
   // Modal & Detail states
-  const [isSendEventOpen, setIsSendEventOpen] = useState(false)
   const [selectedDelivery, setSelectedDelivery] = useState(null)
   const [selectedAdminClient, setSelectedAdminClient] = useState(null)
 
@@ -88,7 +86,7 @@ export function App() {
       return <ClientUsage onNavigateToPlans={() => navigate('/app/profile')} />
     }
     if (path === '/app/api-keys') {
-      return <ApiKeys onOpenSendEventModal={() => setIsSendEventOpen(true)} />
+      return <ApiKeys />
     }
     if (path === '/app/profile') {
       return <ClientProfilePlan />
@@ -137,16 +135,9 @@ export function App() {
 
   return (
     <>
-      <Layout onOpenSendEventModal={() => setIsSendEventOpen(true)}>
+      <Layout>
         {renderContent()}
       </Layout>
-
-      {/* Global Interactive Modals */}
-      <SendEventModal
-        isOpen={isSendEventOpen}
-        onClose={() => setIsSendEventOpen(false)}
-        onEventSent={() => {}}
-      />
 
       <DeliveryDetailModal
         delivery={selectedDelivery}
