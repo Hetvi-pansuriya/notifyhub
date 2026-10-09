@@ -76,6 +76,28 @@ def update_settings(data: SettingsUpdateRequest, db: Session = Depends(get_db)):
     from app.models import SystemStatus
     if data.requests_per_sec is not None:
         settings.DEFAULT_RATE_LIMIT_PER_SEC = data.requests_per_sec
+        rl_st = db.query(SystemStatus).filter(SystemStatus.key == "requests_per_sec").first()
+        if not rl_st:
+            rl_st = SystemStatus(key="requests_per_sec", value=str(data.requests_per_sec))
+            db.add(rl_st)
+        else:
+            rl_st.value = str(data.requests_per_sec)
+
+        from app.models import Plan, Client
+        starter = db.query(Plan).filter(Plan.name.ilike("Starter")).first()
+        if not starter:
+            starter = db.query(Plan).order_by(Plan.created_at.asc()).first()
+        if starter:
+            starter.rate_limit_per_sec = data.requests_per_sec
+            db.query(Client).filter(Client.plan_id == starter.id).update(
+                {Client.rate_limit_per_sec: data.requests_per_sec},
+                synchronize_session=False,
+            )
+        db.query(Client).filter(Client.plan_id.is_(None)).update(
+            {Client.rate_limit_per_sec: data.requests_per_sec},
+            synchronize_session=False,
+        )
+        db.commit()
     if data.sending_speed is not None:
         settings.OUTGOING_RATE_PER_SEC = data.sending_speed
     if data.smtp_host is not None:

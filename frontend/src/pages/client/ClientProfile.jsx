@@ -22,12 +22,20 @@ export function ClientProfile() {
     setLoading(true)
     setError(null)
     try {
-      const data = await request('/console/client')
+      const [data, planData] = await Promise.all([
+        request('/console/client'),
+        request('/console/plan').catch(() => null),
+      ])
       if (data) {
         setCompanyName(data.name || authClient?.name || '')
         setFromName(data.from_name || data.name || '')
         setReplyToEmail(data.reply_to_email || '')
-        setRateLimit(data.rate_limit_per_sec || 50)
+        const effectiveLimit =
+          planData?.rate_limit_per_sec ||
+          planData?.plan?.rate_limit_per_sec ||
+          data.rate_limit_per_sec ||
+          50
+        setRateLimit(effectiveLimit)
         if (data.sender_email) {
           setSenderEmail(data.sender_email)
         }

@@ -32,7 +32,8 @@ export function RateLimitChart({
   }
 
   const peaks = data.map((d) => d.peak_requests_per_sec || 0)
-  const maxVal = Math.max(...peaks, rateLimit, 10)
+  const chartLimit = Number(rateLimit) || (data && data.length > 0 && Number(data[0].rate_limit)) || 50
+  const maxVal = Math.max(...peaks, chartLimit, 10)
   const minVal = 0
 
   const width = 800
@@ -61,7 +62,7 @@ export function RateLimitChart({
     return i === 0 ? `M ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}` : `${acc} L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`
   }, '')
 
-  const limitY = getY(rateLimit)
+  const limitY = getY(chartLimit)
   const activeItem = hoverIndex !== null ? coords[hoverIndex] : null
 
   return (
@@ -123,7 +124,7 @@ export function RateLimitChart({
           fontSize="10.5"
           fontWeight="600"
         >
-          {rateLimit}/s limit
+          {chartLimit}/s limit
         </text>
 
         {/* Peak req/s Line */}

@@ -141,7 +141,7 @@ export function ClientPlan() {
           />
           <StatCard
             title="Rate Limit"
-            value={`${plan.rate_limit_per_sec || 50}/sec`}
+            value={`${currentPlanData?.rate_limit_per_sec || plan.rate_limit_per_sec || 50}/sec`}
             subtext="Token bucket throttle"
             badgeType="gray"
           />
@@ -252,7 +252,7 @@ export function ClientPlan() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
                       <span style={{ color: '#10b981' }}>✓</span>
-                      <span>{p.rate_limit_per_sec || 50} requests per second</span>
+                      <span>{(isCurrent ? (currentPlanData?.rate_limit_per_sec || p.rate_limit_per_sec || plan.rate_limit_per_sec) : (p.rate_limit_per_sec)) || 50} requests per second</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
                       <span style={{ color: '#10b981' }}>✓</span>

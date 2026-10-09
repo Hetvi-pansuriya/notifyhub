@@ -20,13 +20,18 @@ def get_client_plan(
     db: Session = Depends(get_db),
 ):
     _, client = auth
+    db.refresh(client)
     if client.plan is None:
         client.plan = plan_service.get_or_create_default_plan(db)
         client.plan_id = client.plan.id
+        client.rate_limit_per_sec = client.plan.rate_limit_per_sec
         db.commit()
         db.refresh(client)
+    else:
+        db.refresh(client.plan)
 
     sent_this_month, sent_today = plan_service.get_client_month_and_day_usage(db, client.id)
+    rate_limit = (client.plan.rate_limit_per_sec if client.plan else None) or client.rate_limit_per_sec or getattr(settings, "DEFAULT_RATE_LIMIT_PER_SEC", 50) or 50
 
     return {
         "plan": {
@@ -34,14 +39,15 @@ def get_client_plan(
             "name": client.plan.name,
             "description": client.plan.description,
             "monthly_email_limit": client.plan.monthly_email_limit,
-            "daily_email_limit": client.plan.daily_email_limit,
-            "rate_limit_per_sec": client.plan.rate_limit_per_sec,
+            "daily_email_limit": client.daily_email_limit or client.plan.daily_email_limit,
+            "rate_limit_per_sec": rate_limit,
             "created_at": client.plan.created_at,
         },
         "sent_this_month": sent_this_month,
         "sent_today": sent_today,
         "daily_limit": client.daily_email_limit or client.plan.daily_email_limit,
         "monthly_limit": client.plan.monthly_email_limit,
+        "rate_limit_per_sec": rate_limit,
     }
 
 

@@ -42,9 +42,13 @@ def get_console_client(
     db: Session = Depends(get_db),
 ):
     _, client = auth
+    db.refresh(client)
+    if client.plan:
+        db.refresh(client.plan)
     sent_today = get_sent_today(db, client.id)
     sender_email = settings.FROM_EMAIL or settings.sender_email or "no-reply@notifyhub.local"
-    daily_limit = client.daily_email_limit if client.daily_email_limit is not None else 30
+    daily_limit = client.daily_email_limit if client.daily_email_limit is not None else (client.plan.daily_email_limit if client.plan else 30)
+    rate_limit = (client.plan.rate_limit_per_sec if client.plan else None) or client.rate_limit_per_sec or getattr(settings, "DEFAULT_RATE_LIMIT_PER_SEC", 50) or 50
     return ConsoleClientResponse(
         id=client.id,
         name=client.name,
@@ -54,7 +58,7 @@ def get_console_client(
         daily_email_limit=daily_limit,
         sent_today=sent_today,
         sender_email=sender_email,
-        rate_limit_per_sec=client.rate_limit_per_sec or 50,
+        rate_limit_per_sec=rate_limit,
     )
 
 

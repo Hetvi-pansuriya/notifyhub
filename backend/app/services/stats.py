@@ -264,11 +264,18 @@ def get_stats_rate(
         to_dt = to_dt.replace(tzinfo=timezone.utc)
 
     # Determine client rate limit
+    from app.models import SystemStatus
+    st = db.query(SystemStatus).filter(SystemStatus.key == "requests_per_sec").first()
+    default_rate = int(st.value) if (st and st.value and st.value.isdigit()) else getattr(settings, "DEFAULT_RATE_LIMIT_PER_SEC", 50)
+
     if client_id is not None:
         client = db.query(Client).filter(Client.id == client_id).first()
-        rate_limit = client.rate_limit_per_sec if client else settings.DEFAULT_RATE_LIMIT_PER_SEC
+        if client:
+            rate_limit = (client.plan.rate_limit_per_sec if client.plan else None) or client.rate_limit_per_sec or default_rate
+        else:
+            rate_limit = default_rate
     else:
-        rate_limit = settings.DEFAULT_RATE_LIMIT_PER_SEC
+        rate_limit = default_rate
 
     # 1. Peak requests per sec per day
     params = {"from_dt": from_dt, "to_dt": to_dt, "tz": tz_str}

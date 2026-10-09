@@ -83,8 +83,8 @@ export function ClientUsage({ clientId = null, onNavigateToPlans }) {
         setPlanInfo({
           name: p.plan?.name || 'Starter',
           monthly_email_limit: p.plan?.monthly_email_limit || 10000,
-          rate_limit_per_sec: p.plan?.rate_limit_per_sec || 50,
-          sent_this_month: p.usage?.sent_this_month || 0,
+          rate_limit_per_sec: p.rate_limit_per_sec || p.plan?.rate_limit_per_sec || 50,
+          sent_this_month: p.sent_this_month || p.usage?.sent_this_month || 0,
         })
       }
 
@@ -255,14 +255,14 @@ export function ClientUsage({ clientId = null, onNavigateToPlans }) {
                   Rate Limiting & Throttle Activity
                 </h2>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)', margin: '2px 0 0 0' }}>
-                  Peak intake req/sec vs configured limit ({planInfo.rate_limit_per_sec}/s). Red markers indicate 429 rejections.
+                  Peak intake req/sec vs configured limit ({planInfo.rate_limit_per_sec || (rateData?.[0]?.rate_limit) || 50}/s). Red markers indicate 429 rejections.
                 </p>
               </div>
             </div>
 
             <RateLimitChart
               data={rateData}
-              rateLimit={planInfo.rate_limit_per_sec || 50}
+              rateLimit={planInfo.rate_limit_per_sec || (rateData?.[0]?.rate_limit) || 50}
               height={220}
             />
           </div>

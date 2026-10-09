@@ -459,17 +459,25 @@ def get_system_health(db: Session) -> dict:
 def get_system_settings(db: Optional[Session] = None) -> dict:
     """Returns non-secret platform settings."""
     m_mode = False
+    rate_limit_val = getattr(settings, "DEFAULT_RATE_LIMIT_PER_SEC", 50)
     if db is not None:
         from app.models import SystemStatus
         st = db.query(SystemStatus).filter(SystemStatus.key == "maintenance_mode").first()
         if st and st.value:
             m_mode = (st.value.lower() == "true")
+        rl_st = db.query(SystemStatus).filter(SystemStatus.key == "requests_per_sec").first()
+        if rl_st and rl_st.value:
+            try:
+                rate_limit_val = int(rl_st.value)
+                settings.DEFAULT_RATE_LIMIT_PER_SEC = rate_limit_val
+            except ValueError:
+                pass
 
     return {
         "mail_provider": settings.MAIL_PROVIDER,
         "sendgrid_api_key_configured": bool(getattr(settings, "SENDGRID_API_KEY", None)),
         "global_daily_limit": settings.GLOBAL_DAILY_LIMIT,
-        "default_rate_limit_per_sec": settings.DEFAULT_RATE_LIMIT_PER_SEC,
+        "default_rate_limit_per_sec": rate_limit_val,
         "default_plan_name": settings.DEFAULT_PLAN_NAME,
         "default_plan_monthly_limit": settings.DEFAULT_PLAN_MONTHLY_LIMIT,
         "session_days": settings.SESSION_DAYS,
@@ -482,7 +490,7 @@ def get_system_settings(db: Optional[Session] = None) -> dict:
         "smtp_host": getattr(settings, "SMTP_HOST", "smtp.example.com"),
         "smtp_port": getattr(settings, "SMTP_PORT", 587),
         "from_address": getattr(settings, "FROM_EMAIL", None) or getattr(settings, "SMTP_FROM", "no-reply@notifyhub.example"),
-        "requests_per_sec": getattr(settings, "DEFAULT_RATE_LIMIT_PER_SEC", 50),
+        "requests_per_sec": rate_limit_val,
         "sending_speed": getattr(settings, "OUTGOING_RATE_PER_SEC", 20),
         "retry_after": "5s, 10s, 20s, 40s",
         "maintenance_mode": m_mode,

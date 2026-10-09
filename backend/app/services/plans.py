@@ -126,8 +126,29 @@ def update_plan(
         plan.monthly_email_limit = data["monthly_email_limit"]
     if "daily_email_limit" in data and data["daily_email_limit"] is not None:
         plan.daily_email_limit = data["daily_email_limit"]
+        db.query(Client).filter(Client.plan_id == plan.id).update(
+            {Client.daily_email_limit: data["daily_email_limit"]},
+            synchronize_session=False,
+        )
     if "rate_limit_per_sec" in data and data["rate_limit_per_sec"] is not None:
         plan.rate_limit_per_sec = data["rate_limit_per_sec"]
+        db.query(Client).filter(Client.plan_id == plan.id).update(
+            {Client.rate_limit_per_sec: data["rate_limit_per_sec"]},
+            synchronize_session=False,
+        )
+        if plan.name.lower() == "starter" or plan.name == settings.DEFAULT_PLAN_NAME:
+            settings.DEFAULT_RATE_LIMIT_PER_SEC = data["rate_limit_per_sec"]
+            from app.models import SystemStatus
+            rl_st = db.query(SystemStatus).filter(SystemStatus.key == "requests_per_sec").first()
+            if not rl_st:
+                rl_st = SystemStatus(key="requests_per_sec", value=str(data["rate_limit_per_sec"]))
+                db.add(rl_st)
+            else:
+                rl_st.value = str(data["rate_limit_per_sec"])
+            db.query(Client).filter(Client.plan_id.is_(None)).update(
+                {Client.rate_limit_per_sec: data["rate_limit_per_sec"]},
+                synchronize_session=False,
+            )
 
     db.commit()
     db.refresh(plan)
