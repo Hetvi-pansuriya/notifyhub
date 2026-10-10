@@ -1,5 +1,6 @@
 """Email templates management API endpoints."""
 
+from fastapi import HTTPException
 import uuid
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
