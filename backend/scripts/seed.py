@@ -12,18 +12,19 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from sqlalchemy.orm import Session
+from app.config import settings
 from app.db import SessionLocal
 from app.models import User
 from app.security import hash_password
 
 
 def seed_admin() -> None:
-    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
-    admin_password = os.environ.get("ADMIN_PASSWORD", "")
+    admin_email = (os.environ.get("ADMIN_EMAIL") or settings.ADMIN_EMAIL).strip().lower()
+    admin_password = os.environ.get("ADMIN_PASSWORD") or settings.ADMIN_PASSWORD
 
     if not admin_email or not admin_password:
         sys.stderr.write(
-            "ERROR: ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be provided to seed the admin account.\n"
+            "ERROR: ADMIN_EMAIL and ADMIN_PASSWORD must be provided to seed the admin account.\n"
         )
         sys.exit(1)
 

@@ -75,7 +75,9 @@ class Settings(BaseSettings):
     def sync_database_url(self) -> str:
         """Returns database URL guaranteed to use psycopg (v3) dialect."""
         url = self.DATABASE_URL
-        if url.startswith("postgresql://"):
+        if url.startswith("postgres://"):
+            return url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif url.startswith("postgresql://"):
             return url.replace("postgresql://", "postgresql+psycopg://", 1)
         elif url.startswith("postgresql+psycopg2://"):
             return url.replace("postgresql+psycopg2://", "postgresql+psycopg://", 1)

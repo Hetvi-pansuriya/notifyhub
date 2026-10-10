@@ -21,9 +21,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy source code and migrations
 COPY . .
+RUN chmod +x start.sh
 
 # Expose FastAPI port
 EXPOSE 8000
 
-# Default command (can be overridden by docker-compose)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command runs migrations, seed, worker, and uvicorn
+CMD ["sh", "start.sh"]
