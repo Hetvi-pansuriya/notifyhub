@@ -283,8 +283,8 @@ export function ClientTemplates() {
       {/* Workflow Explanation Banner */}
       <div
         style={{
-          backgroundColor: '#161922',
-          border: '1px solid #1f232f',
+          backgroundColor: 'var(--bg-surface-elevated, #18181a)',
+          border: '1px solid var(--border-subtle, #232325)',
           borderRadius: '12px',
           padding: '14px 18px',
           display: 'flex',
@@ -293,8 +293,8 @@ export function ClientTemplates() {
           gap: '16px',
         }}
       >
-        <div style={{ fontSize: '13px', color: '#8c93a7', lineHeight: '1.5' }}>
-          <strong style={{ color: '#ffffff' }}>How templates work:</strong> Your client application sends transactional emails by calling <code style={{ color: '#60a5fa', backgroundColor: '#10141f', padding: '2px 6px', borderRadius: '4px' }}>POST /api/events</code> with an event type (e.g. <code style={{ color: '#60a5fa' }}>otp</code>, <code style={{ color: '#60a5fa' }}>report_email</code>). NotifyHub automatically renders the <span style={{ color: '#10b981', fontWeight: 600 }}>Active</span> template with the recipient's variables. You do not need to change code on your server when updating templates here.
+        <div style={{ fontSize: '13px', color: 'var(--text-secondary, #9a9a9f)', lineHeight: '1.5' }}>
+          <strong style={{ color: 'var(--text-main, #ececec)' }}>How templates work:</strong> Your client application sends transactional emails by calling <code style={{ color: '#60a5fa', backgroundColor: '#141416', padding: '2px 6px', borderRadius: '4px' }}>POST /api/events</code> with an event type (e.g. <code style={{ color: '#60a5fa' }}>otp</code>, <code style={{ color: '#60a5fa' }}>report_email</code>). NotifyHub automatically renders the <span style={{ color: '#10b981', fontWeight: 600 }}>Active</span> template with the recipient's variables. You do not need to change code on your server when updating templates here.
         </div>
       </div>
 
@@ -346,8 +346,8 @@ export function ClientTemplates() {
                   key={tmpl.id}
                   onClick={() => selectTemplateForEdit(tmpl)}
                   style={{
-                    backgroundColor: isSelected ? '#171a23' : '#14161f',
-                    border: `1.5px solid ${isSelected ? '#3b82f6' : '#1f232f'}`,
+                    backgroundColor: isSelected ? '#1c1c1f' : 'var(--bg-surface-elevated, #18181a)',
+                    border: `1.5px solid ${isSelected ? '#3b82f6' : 'var(--border-subtle, #232325)'}`,
                     borderRadius: '12px',
                     padding: '16px',
                     cursor: 'pointer',
@@ -362,11 +362,11 @@ export function ClientTemplates() {
                       <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#ffffff' }}>
                         {tmpl.event_type}
                       </span>
-                      <span style={{ fontSize: '11px', color: '#8c93a7', backgroundColor: '#1e2230', padding: '1px 6px', borderRadius: '4px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary, #9a9a9f)', backgroundColor: '#1a1a1d', border: '1px solid #232325', padding: '1px 6px', borderRadius: '4px' }}>
                         v{tmpl.version}
                       </span>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#8c93a7', marginTop: '4px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)', marginTop: '4px' }}>
                       {subtext}
                     </div>
                   </div>
@@ -378,8 +378,8 @@ export function ClientTemplates() {
                         fontWeight: 600,
                         padding: '3px 9px',
                         borderRadius: '9999px',
-                        backgroundColor: isActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(140, 147, 167, 0.15)',
-                        color: isActive ? '#34d399' : '#8c93a7',
+                        backgroundColor: isActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                        color: isActive ? '#34d399' : 'var(--text-secondary, #9a9a9f)',
                       }}
                     >
                       {isActive ? 'Active' : 'Draft'}
@@ -419,12 +419,12 @@ export function ClientTemplates() {
                   Preview
                 </h2>
                 {selectedTemplate && (
-                  <span style={{ fontSize: '12px', color: '#8c93a7' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)' }}>
                     Editing: <strong style={{ color: '#ffffff' }}>{selectedTemplate.event_type} (v{selectedTemplate.version})</strong>
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #585f73)', margin: '4px 0 0 0' }}>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted, #71717a)', margin: '4px 0 0 0' }}>
                 Try a draft with sample data before it goes live.
               </p>
             </div>
@@ -496,7 +496,7 @@ export function ClientTemplates() {
                   Sample Data (JSON variables)
                 </label>
                 {detectedVars.length > 0 && (
-                  <span style={{ fontSize: '11px', color: '#8c93a7' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary, #9a9a9f)' }}>
                     Detected: {detectedVars.map((v) => `{{ ${v} }}`).join(', ')}
                   </span>
                 )}
@@ -513,11 +513,11 @@ export function ClientTemplates() {
             <div
               style={{
                 fontSize: '12.5px',
-                color: previewError ? '#f87171' : 'var(--text-muted, #585f73)',
+                color: previewError ? '#f87171' : 'var(--text-muted, #71717a)',
                 padding: '8px 12px',
-                backgroundColor: previewError ? 'rgba(239, 68, 68, 0.08)' : '#161922',
+                backgroundColor: previewError ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-surface-elevated, #18181a)',
                 borderRadius: '8px',
-                border: `1px solid ${previewError ? 'rgba(239, 68, 68, 0.25)' : '#1f232f'}`,
+                border: `1px solid ${previewError ? 'rgba(239, 68, 68, 0.25)' : 'var(--border-subtle, #232325)'}`,
               }}
             >
               {previewError ? (
@@ -531,8 +531,8 @@ export function ClientTemplates() {
             {showRenderedPreview && previewResult && (
               <div
                 style={{
-                  backgroundColor: '#0e1017',
-                  border: '1px solid #2d3345',
+                  backgroundColor: '#0f0f11',
+                  border: '1px solid #232325',
                   borderRadius: '10px',
                   padding: '16px',
                   display: 'flex',
@@ -544,13 +544,13 @@ export function ClientTemplates() {
                   ✓ Live Rendered Email Output
                 </div>
                 <div>
-                  <span style={{ fontSize: '11.5px', color: '#8c93a7' }}>Subject: </span>
+                  <span style={{ fontSize: '11.5px', color: 'var(--text-secondary, #9a9a9f)' }}>Subject: </span>
                   <strong style={{ fontSize: '13px', color: '#ffffff' }}>{previewResult.rendered_subject}</strong>
                 </div>
                 <div
                   style={{
-                    backgroundColor: '#141722',
-                    border: '1px solid #1f232f',
+                    backgroundColor: '#141415',
+                    border: '1px solid #232325',
                     borderRadius: '8px',
                     padding: '12px',
                     fontSize: '12.5px',

@@ -242,13 +242,13 @@ export function AdminSystemHealth() {
                       y1={y}
                       x2={chartWidth - padRight}
                       y2={y}
-                      stroke="#1e2230"
+                      stroke="#232325"
                       strokeWidth="1"
                     />
                     <text
                       x={padLeft - 10}
                       y={y + 4}
-                      fill="#585f73"
+                      fill="#71717a"
                       fontSize="11"
                       textAnchor="end"
                       fontFamily="inherit"
@@ -277,7 +277,7 @@ export function AdminSystemHealth() {
                   cy={pt.y}
                   r={hoveredPoint === idx ? '6' : '4'}
                   fill="#ffffff"
-                  stroke="#12141a"
+                  stroke="#141415"
                   strokeWidth="2"
                   style={{ cursor: 'pointer', transition: 'r 0.15s ease' }}
                   onMouseEnter={() => setHoveredPoint(idx)}
@@ -289,7 +289,7 @@ export function AdminSystemHealth() {
               <text
                 x={padLeft}
                 y={chartHeight - 6}
-                fill="#585f73"
+                fill="#71717a"
                 fontSize="11"
                 textAnchor="start"
                 fontFamily="inherit"
@@ -299,7 +299,7 @@ export function AdminSystemHealth() {
               <text
                 x={chartWidth - padRight}
                 y={chartHeight - 6}
-                fill="#585f73"
+                fill="#71717a"
                 fontSize="11"
                 textAnchor="end"
                 fontFamily="inherit"
@@ -316,8 +316,8 @@ export function AdminSystemHealth() {
                   top: `${Math.max(0, (coords[hoveredPoint].y / chartHeight) * 100 - 15)}%`,
                   left: `${(coords[hoveredPoint].x / chartWidth) * 100}%`,
                   transform: 'translate(-50%, -100%)',
-                  backgroundColor: '#1f2430',
-                  border: '1px solid #32384a',
+                  backgroundColor: '#18181a',
+                  border: '1px solid #232325',
                   color: '#ffffff',
                   padding: '4px 8px',
                   borderRadius: '6px',

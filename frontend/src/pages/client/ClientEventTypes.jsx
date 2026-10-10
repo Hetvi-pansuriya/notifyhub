@@ -281,8 +281,8 @@ export function ClientEventTypes() {
           display: 'inline-block',
           padding: '3px 10px',
           borderRadius: '9999px',
-          backgroundColor: '#181b24',
-          color: '#8c93a7',
+          backgroundColor: 'var(--bg-surface-elevated, #18181a)',
+          color: 'var(--text-secondary, #9a9a9f)',
           fontSize: '11.5px',
           fontWeight: 600,
         }}
@@ -392,12 +392,12 @@ export function ClientEventTypes() {
             {/* Bottom Callout Note matching mockup 04_client_event_types.png */}
             <div
               style={{
-                backgroundColor: '#161922',
-                border: '1px solid #1f232f',
+                backgroundColor: 'var(--bg-surface-elevated, #18181a)',
+                border: '1px solid var(--border-subtle, #232325)',
                 borderRadius: '10px',
                 padding: '14px 18px',
                 fontSize: '13px',
-                color: '#8c93a7',
+                color: 'var(--text-secondary, #9a9a9f)',
                 lineHeight: '1.5',
               }}
             >
@@ -428,8 +428,8 @@ export function ClientEventTypes() {
         >
           <div
             style={{
-              backgroundColor: '#12141a',
-              border: '1px solid #1f232f',
+              backgroundColor: 'var(--bg-surface-card, #141415)',
+              border: '1px solid var(--border-subtle, #232325)',
               borderRadius: '16px',
               width: '100%',
               maxWidth: '520px',
@@ -439,13 +439,13 @@ export function ClientEventTypes() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main, #ececec)', margin: 0 }}>
                 {editingType ? `Edit ${editingType.event_type}` : 'New event type'}
               </h2>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#8c93a7', cursor: 'pointer', fontSize: '20px' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary, #9a9a9f)', cursor: 'pointer', fontSize: '20px' }}
               >
                 ×
               </button>
@@ -493,7 +493,7 @@ export function ClientEventTypes() {
                 </label>
                 <select
                   className="input-base"
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#181b24', color: '#ffffff' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#0f0f11', color: '#ffffff' }}
                   value={priority}
                   onChange={(e) => setPriority(Number(e.target.value))}
                 >
@@ -509,7 +509,7 @@ export function ClientEventTypes() {
                 </label>
                 <select
                   className="input-base"
-                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#181b24', color: '#ffffff', marginBottom: ttlOption === 'custom' ? '8px' : '0' }}
+                  style={{ width: '100%', boxSizing: 'border-box', backgroundColor: '#0f0f11', color: '#ffffff', marginBottom: ttlOption === 'custom' ? '8px' : '0' }}
                   value={ttlOption}
                   onChange={(e) => setTtlOption(e.target.value)}
                 >

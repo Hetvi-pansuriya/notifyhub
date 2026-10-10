@@ -61,8 +61,8 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
     >
       <div
         style={{
-          backgroundColor: '#12141a',
-          border: '1px solid #1f232f',
+          backgroundColor: 'var(--bg-surface-card, #141415)',
+          border: '1px solid var(--border-subtle, #232325)',
           borderRadius: '16px',
           width: '100%',
           maxWidth: '680px',
@@ -77,17 +77,17 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #1f232f',
+            borderBottom: '1px solid var(--border-subtle, #232325)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <div>
-            <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+            <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-main, #ececec)', margin: 0 }}>
               Delivery Details
             </h2>
-            <div style={{ fontSize: '11px', color: '#585f73', marginTop: '2px', fontFamily: 'monospace' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted, #71717a)', marginTop: '2px', fontFamily: 'monospace' }}>
               {delivery.id}
             </div>
           </div>
@@ -96,7 +96,7 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
             style={{
               background: 'none',
               border: 'none',
-              color: '#8c93a7',
+              color: 'var(--text-secondary, #9a9a9f)',
               fontSize: '20px',
               cursor: 'pointer',
               lineHeight: 1,
@@ -114,14 +114,14 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',
               gap: '12px',
-              background: '#161922',
+              background: 'var(--bg-surface-elevated, #18181a)',
               padding: '16px',
               borderRadius: '12px',
-              border: '1px solid #202431',
+              border: '1px solid var(--border-subtle, #232325)',
             }}
           >
             <div>
-              <div style={{ fontSize: '11px', color: '#585f73' }}>Status</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted, #71717a)' }}>Status</div>
               <div style={{ marginTop: '4px' }}>
                 <span className={`badge ${getStatusBadge(delivery.status)}`}>
                   {delivery.status}
@@ -129,14 +129,14 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '11px', color: '#585f73' }}>Attempts</div>
-              <div style={{ fontWeight: 600, marginTop: '4px', color: '#ffffff' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted, #71717a)' }}>Attempts</div>
+              <div style={{ fontWeight: 600, marginTop: '4px', color: 'var(--text-main, #ececec)' }}>
                 {delivery.attempt_count ?? 0}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '11px', color: '#585f73' }}>Priority</div>
-              <div style={{ fontWeight: 600, marginTop: '4px', color: '#ffffff' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted, #71717a)' }}>Priority</div>
+              <div style={{ fontWeight: 600, marginTop: '4px', color: 'var(--text-main, #ececec)' }}>
                 {delivery.priority ?? 1}
               </div>
             </div>
@@ -145,32 +145,32 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
           {/* Key details */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
-              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Client ID</div>
-              <div style={{ fontSize: '13px', color: '#f1f3f9', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Client ID</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-main, #ececec)', fontFamily: 'monospace' }}>
                 {delivery.client_id || '—'}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Event Type</div>
-              <div style={{ fontSize: '13px', color: '#f1f3f9', fontWeight: 500 }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Event Type</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-main, #ececec)', fontWeight: 500 }}>
                 {delivery.event_type || 'default'}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Recipient Email</div>
-              <div style={{ fontSize: '13px', color: '#f1f3f9', fontWeight: 500 }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Recipient Email</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-main, #ececec)', fontWeight: 500 }}>
                 {delivery.recipient_email || delivery.to_email || '—'}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Created At</div>
-              <div style={{ fontSize: '13px', color: '#f1f3f9' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Created At</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-main, #ececec)' }}>
                 {formatDateTime(delivery.created_at)}
               </div>
             </div>
             {delivery.sent_at && (
               <div>
-                <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Sent At</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Sent At</div>
                 <div style={{ fontSize: '13px', color: '#34d399' }}>
                   {formatDateTime(delivery.sent_at)}
                 </div>
@@ -178,7 +178,7 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
             )}
             {delivery.next_attempt_at && delivery.status === 'queued' && (
               <div>
-                <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Next Attempt At</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Next Attempt At</div>
                 <div style={{ fontSize: '13px', color: '#fbbf24' }}>
                   {formatDateTime(delivery.next_attempt_at)}
                 </div>
@@ -186,8 +186,8 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
             )}
             {delivery.idempotency_key && (
               <div style={{ gridColumn: 'span 2' }}>
-                <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Idempotency Key</div>
-                <div style={{ fontSize: '12px', color: '#8c93a7', fontFamily: 'monospace' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Idempotency Key</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)', fontFamily: 'monospace' }}>
                   {delivery.idempotency_key}
                 </div>
               </div>
@@ -196,15 +196,15 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
 
           {/* Subject & Body */}
           <div>
-            <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Rendered Subject</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Rendered Subject</div>
             <div
               style={{
-                backgroundColor: '#161922',
-                border: '1px solid #202431',
+                backgroundColor: 'var(--bg-surface-elevated, #18181a)',
+                border: '1px solid var(--border-subtle, #232325)',
                 borderRadius: '8px',
                 padding: '10px 12px',
                 fontSize: '13px',
-                color: '#ffffff',
+                color: 'var(--text-main, #ececec)',
               }}
             >
               {delivery.rendered_subject || 'N/A'}
@@ -212,15 +212,15 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
           </div>
 
           <div>
-            <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Rendered Body</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Rendered Body</div>
             <pre
               style={{
-                backgroundColor: '#161922',
-                border: '1px solid #202431',
+                backgroundColor: 'var(--bg-surface-elevated, #18181a)',
+                border: '1px solid var(--border-subtle, #232325)',
                 borderRadius: '8px',
                 padding: '12px',
                 fontSize: '12px',
-                color: '#8c93a7',
+                color: 'var(--text-secondary, #9a9a9f)',
                 whiteSpace: 'pre-wrap',
                 fontFamily: 'inherit',
                 maxHeight: '140px',
@@ -235,11 +235,11 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
           {/* Attachments */}
           {delivery.attachments && delivery.attachments.length > 0 && (
             <div>
-              <div style={{ fontSize: '12px', color: '#585f73', marginBottom: '4px' }}>Attachments</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)', marginBottom: '4px' }}>Attachments</div>
               <div
                 style={{
-                  backgroundColor: '#161922',
-                  border: '1px solid #202431',
+                  backgroundColor: 'var(--bg-surface-elevated, #18181a)',
+                  border: '1px solid var(--border-subtle, #232325)',
                   borderRadius: '8px',
                   padding: '12px',
                   display: 'flex',
@@ -255,12 +255,12 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       fontSize: '13px',
-                      color: '#f1f3f9',
+                      color: 'var(--text-main, #ececec)',
                     }}
                   >
                     <span style={{ fontWeight: 500 }}>{att.filename}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                      <span style={{ color: '#8c93a7' }}>{(att.size_bytes / 1024).toFixed(1)} KB</span>
+                      <span style={{ color: 'var(--text-secondary, #9a9a9f)' }}>{(att.size_bytes / 1024).toFixed(1)} KB</span>
                       {!att.available && (
                         <span style={{ color: '#f59e0b', fontSize: '11px' }}>
                           Removed after sending
@@ -304,12 +304,12 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
               <pre
                 style={{
                   marginTop: '8px',
-                  backgroundColor: '#0c0d12',
-                  border: '1px solid #1f232f',
+                  backgroundColor: '#0b0b0c',
+                  border: '1px solid var(--border-subtle, #232325)',
                   borderRadius: '8px',
                   padding: '12px',
                   fontSize: '11px',
-                  color: '#8c93a7',
+                  color: 'var(--text-secondary, #9a9a9f)',
                   maxHeight: '160px',
                   overflowY: 'auto',
                   fontFamily: 'monospace',
@@ -340,7 +340,7 @@ export function DeliveryDetailModal({ delivery, onClose, onRetried }) {
         <div
           style={{
             padding: '16px 24px',
-            borderTop: '1px solid #1f232f',
+            borderTop: '1px solid var(--border-subtle, #232325)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',

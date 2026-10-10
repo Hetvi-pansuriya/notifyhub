@@ -157,7 +157,7 @@ export function ClientPlan() {
               {sentThisMonth.toLocaleString()} of {monthlyLimit.toLocaleString()} emails sent ({monthlyPct}%) · {monthlyRemaining.toLocaleString()} remaining
             </span>
           </div>
-          <div style={{ width: '100%', height: '8px', backgroundColor: '#1b1e2a', borderRadius: '9999px', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: '8px', backgroundColor: '#1f1f23', borderRadius: '9999px', overflow: 'hidden' }}>
             <div
               style={{
                 width: `${monthlyPct}%`,
@@ -180,7 +180,7 @@ export function ClientPlan() {
               {sentToday.toLocaleString()} of {dailyLimit.toLocaleString()} emails sent today ({dailyPct}%)
             </span>
           </div>
-          <div style={{ width: '100%', height: '8px', backgroundColor: '#1b1e2a', borderRadius: '9999px', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: '8px', backgroundColor: '#1f1f23', borderRadius: '9999px', overflow: 'hidden' }}>
             <div
               style={{
                 width: `${dailyPct}%`,
@@ -245,7 +245,7 @@ export function ClientPlan() {
                     </span>
                   </div>
 
-                  <div style={{ borderTop: '1px solid #1a1d27', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                  <div style={{ borderTop: '1px solid var(--border-subtle, #232325)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f1f3f9' }}>
                       <span style={{ color: '#10b981' }}>✓</span>
                       <span>{(p.monthly_email_limit || 0).toLocaleString()} emails a month</span>

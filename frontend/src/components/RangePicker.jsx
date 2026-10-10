@@ -59,10 +59,10 @@ export function RangePicker({ selectedKey = '7d', onChange }) {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        backgroundColor: '#12141a',
+        backgroundColor: 'var(--bg-surface-card, #141415)',
         padding: '3px',
         borderRadius: 'var(--radius-full, 9999px)',
-        border: '1px solid var(--border-subtle, #1f232f)',
+        border: '1px solid var(--border-subtle, #232325)',
       }}
     >
       {RANGE_OPTIONS.map((opt) => {
@@ -77,9 +77,9 @@ export function RangePicker({ selectedKey = '7d', onChange }) {
               borderRadius: 'var(--radius-full, 9999px)',
               fontSize: '12px',
               fontWeight: isActive ? 600 : 500,
-              color: isActive ? '#ffffff' : '#8c93a7',
-              backgroundColor: isActive ? '#222634' : 'transparent',
-              border: isActive ? '1px solid #2d3345' : '1px solid transparent',
+              color: isActive ? '#ffffff' : 'var(--text-secondary, #9a9a9f)',
+              backgroundColor: isActive ? '#222226' : 'transparent',
+              border: isActive ? '1px solid #33333a' : '1px solid transparent',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}

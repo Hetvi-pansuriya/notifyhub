@@ -31,9 +31,9 @@ export function LineChart({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'var(--text-muted, #585f73)',
+          color: 'var(--text-muted, #71717a)',
           fontSize: '13px',
-          border: '1px dashed var(--border-subtle, #1f232f)',
+          border: '1px dashed var(--border-subtle, #232325)',
           borderRadius: 'var(--radius-md, 12px)',
         }}
       >
@@ -158,14 +158,14 @@ export function LineChart({
                 y1={y}
                 x2={width - paddingX}
                 y2={y}
-                stroke="#1f232f"
+                stroke="#232325"
                 strokeWidth="1"
                 strokeDasharray={i === 0 ? 'none' : '3 3'}
               />
               <text
                 x={paddingX - 10}
                 y={y + 4}
-                fill="#585f73"
+                fill="#71717a"
                 fontSize="11"
                 textAnchor="end"
                 fontFamily="sans-serif"
@@ -268,8 +268,8 @@ export function LineChart({
             top: `${Math.max(8, (activePoint.y / height) * 100 - 24)}%`,
             transform: 'translate(-50%, -100%)',
             pointerEvents: 'none',
-            backgroundColor: '#171a23',
-            border: '1px solid #2d3345',
+            backgroundColor: '#18181a',
+            border: '1px solid #232325',
             borderRadius: '6px',
             padding: '6px 10px',
             fontSize: '11px',

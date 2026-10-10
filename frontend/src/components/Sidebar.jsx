@@ -231,16 +231,16 @@ export function Sidebar() {
                   gap: '12px',
                   padding: '9px 12px',
                   borderRadius: 'var(--radius-full, 9999px)',
-                  color: isActive ? '#ffffff' : 'var(--text-secondary, #8c93a7)',
-                  backgroundColor: isActive ? 'var(--bg-surface-elevated, #171a23)' : 'transparent',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary, #9a9a9f)',
+                  backgroundColor: isActive ? 'var(--bg-surface-elevated, #1c1c1f)' : 'transparent',
                   fontWeight: isActive ? 600 : 400,
                   fontSize: '13px',
                   transition: 'all 0.15s ease',
-                  border: isActive ? '1px solid var(--border-subtle, #1f232f)' : '1px solid transparent',
+                  border: isActive ? '1px solid var(--border-subtle, #232325)' : '1px solid transparent',
                   textDecoration: 'none',
                 }}
               >
-                <span style={{ color: isActive ? '#ffffff' : 'var(--text-muted, #585f73)', display: 'flex' }}>
+                <span style={{ color: isActive ? '#ffffff' : 'var(--text-muted, #71717a)', display: 'flex' }}>
                   {item.icon}
                 </span>
                 <span>{item.name}</span>
@@ -253,7 +253,7 @@ export function Sidebar() {
       {/* User Card at bottom with Sign out */}
       <div
         style={{
-          borderTop: '1px solid var(--border-subtle, #1f232f)',
+          borderTop: '1px solid var(--border-subtle, #232325)',
           paddingTop: '16px',
           display: 'flex',
           flexDirection: 'column',

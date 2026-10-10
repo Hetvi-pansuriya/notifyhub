@@ -91,13 +91,13 @@ export function RateLimitChart({
                 y1={y}
                 x2={width - paddingX}
                 y2={y}
-                stroke="#1f232f"
+                stroke="#232325"
                 strokeWidth="1"
               />
               <text
                 x={paddingX - 10}
                 y={y + 4}
-                fill="#585f73"
+                fill="#71717a"
                 fontSize="11"
                 textAnchor="end"
               >
@@ -155,7 +155,7 @@ export function RateLimitChart({
                 cy={pt.y}
                 r={has429 ? 5 : (hoverIndex === i ? 4 : 2.5)}
                 fill={has429 ? '#ef4444' : '#3b82f6'}
-                stroke={has429 ? '#ffffff' : '#12141a'}
+                stroke={has429 ? '#ffffff' : '#141415'}
                 strokeWidth={has429 ? '2' : '1'}
               />
 
@@ -198,8 +198,8 @@ export function RateLimitChart({
             top: `${Math.max(8, (activeItem.y / height) * 100 - 20)}%`,
             transform: 'translate(-50%, -100%)',
             pointerEvents: 'none',
-            backgroundColor: '#171a23',
-            border: '1px solid #2d3345',
+            backgroundColor: '#18181a',
+            border: '1px solid #232325',
             borderRadius: '6px',
             padding: '8px 12px',
             fontSize: '11px',
@@ -209,7 +209,7 @@ export function RateLimitChart({
             zIndex: 10,
           }}
         >
-          <div style={{ color: '#8c93a7', marginBottom: '2px' }}>
+          <div style={{ color: 'var(--text-secondary, #9a9a9f)', marginBottom: '2px' }}>
             {formatDate(activeItem.data.date)}
           </div>
           <div style={{ fontWeight: 600 }}>

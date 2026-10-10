@@ -30,9 +30,9 @@ export function BarChart({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'var(--text-muted, #585f73)',
+          color: 'var(--text-muted, #71717a)',
           fontSize: '13px',
-          border: '1px dashed var(--border-subtle, #1f232f)',
+          border: '1px dashed var(--border-subtle, #232325)',
           borderRadius: 'var(--radius-md, 12px)',
         }}
       >
@@ -104,14 +104,14 @@ export function BarChart({
                 y1={y}
                 x2={width - paddingX}
                 y2={y}
-                stroke="#1f232f"
+                stroke="#232325"
                 strokeWidth="1"
                 strokeDasharray={i === 0 ? 'none' : '3 3'}
               />
               <text
                 x={paddingX - 10}
                 y={y + 4}
-                fill="#585f73"
+                fill="#71717a"
                 fontSize="11"
                 textAnchor="end"
                 fontFamily="sans-serif"
@@ -169,8 +169,8 @@ export function BarChart({
             top: `${Math.max(6, (getY(activeItem.value) / height) * 100 - 20)}%`,
             transform: 'translate(-50%, -100%)',
             pointerEvents: 'none',
-            backgroundColor: '#171a23',
-            border: '1px solid #2d3345',
+            backgroundColor: '#18181a',
+            border: '1px solid #232325',
             borderRadius: '6px',
             padding: '6px 10px',
             fontSize: '11px',
@@ -180,9 +180,9 @@ export function BarChart({
             zIndex: 10,
           }}
         >
-          <div style={{ color: '#8c93a7', marginBottom: '2px' }}>{tooltipLabel}</div>
+          <div style={{ color: 'var(--text-secondary, #9a9a9f)', marginBottom: '2px' }}>{tooltipLabel}</div>
           <div style={{ fontWeight: 600 }}>
-            {activeItem.value.toLocaleString()} <span style={{ color: '#8c93a7', fontWeight: 400 }}>{unit}</span>
+            {activeItem.value.toLocaleString()} <span style={{ color: 'var(--text-secondary, #9a9a9f)', fontWeight: 400 }}>{unit}</span>
           </div>
         </div>
       )}

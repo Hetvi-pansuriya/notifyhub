@@ -237,12 +237,12 @@ export function AdminSettings() {
               value={requestsPerSec}
               onChange={(e) => setRequestsPerSec(e.target.value)}
               placeholder="50"
-              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+              style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
               Sending speed (emails per second)
             </label>
             <input
@@ -251,12 +251,12 @@ export function AdminSettings() {
               value={sendingSpeed}
               onChange={(e) => setSendingSpeed(e.target.value)}
               placeholder="20"
-              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+              style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
               Retry after
             </label>
             <input
@@ -265,7 +265,7 @@ export function AdminSettings() {
               value={retryAfter}
               onChange={(e) => setRetryAfter(e.target.value)}
               placeholder="5s, 10s, 20s, 40s"
-              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+              style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
             />
           </div>
         </div>
@@ -287,7 +287,7 @@ export function AdminSettings() {
           </h3>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
               Host
             </label>
             <input
@@ -296,12 +296,12 @@ export function AdminSettings() {
               value={host}
               onChange={(e) => setHost(e.target.value)}
               placeholder="smtp.example.com"
-              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+              style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
               Port
             </label>
             <input
@@ -310,12 +310,12 @@ export function AdminSettings() {
               value={port}
               onChange={(e) => setPort(e.target.value)}
               placeholder="587"
-              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+              style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
               From address
             </label>
             <input
@@ -324,7 +324,7 @@ export function AdminSettings() {
               value={fromAddress}
               onChange={(e) => setFromAddress(e.target.value)}
               placeholder="no-reply@notifyhub.example"
-              style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+              style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
             />
           </div>
         </div>
@@ -357,9 +357,9 @@ export function AdminSettings() {
               onClick={handleRotateKey}
               disabled={rotatingKey}
               style={{
-                backgroundColor: '#1b1f2b',
+                backgroundColor: '#18181a',
                 color: '#ffffff',
-                border: '1px solid #2d3345',
+                border: '1px solid #232325',
                 borderRadius: '8px',
                 padding: '8px 18px',
                 fontSize: '13px',
@@ -424,7 +424,7 @@ export function AdminSettings() {
               position: 'relative',
               width: '46px',
               height: '26px',
-              backgroundColor: maintenanceMode ? '#10b981' : '#2d3345',
+              backgroundColor: maintenanceMode ? '#10b981' : '#27272a',
               borderRadius: '9999px',
               border: 'none',
               cursor: 'pointer',
@@ -531,7 +531,7 @@ export function AdminSettings() {
                   placeholder="admin@example.com"
                   value={testRecipient}
                   onChange={(e) => setTestRecipient(e.target.value)}
-                  style={{ flex: 1, fontSize: '13px', backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+                  style={{ flex: 1, fontSize: '13px', backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
                   required
                 />
                 <button

@@ -205,9 +205,9 @@ export function AdminOverview({ onSelectClient }) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '12px 16px',
-                  backgroundColor: '#161922',
+                  backgroundColor: 'var(--bg-surface-elevated, #18181a)',
                   borderRadius: '10px',
-                  border: '1px solid #202431',
+                  border: '1px solid var(--border-subtle, #232325)',
                   cursor: 'pointer',
                   transition: 'border-color 0.15s ease',
                 }}

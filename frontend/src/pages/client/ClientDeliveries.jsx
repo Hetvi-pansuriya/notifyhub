@@ -144,8 +144,8 @@ export function ClientDeliveries({ onSelectDelivery }) {
               style={{
                 width: '100%',
                 padding: '7px 14px',
-                backgroundColor: '#161922',
-                border: '1px solid var(--border-subtle, #1f232f)',
+                backgroundColor: '#0f0f11',
+                border: '1px solid var(--border-input, #232325)',
                 borderRadius: 'var(--radius-full, 9999px)',
                 color: '#ffffff',
                 fontSize: '12.5px',

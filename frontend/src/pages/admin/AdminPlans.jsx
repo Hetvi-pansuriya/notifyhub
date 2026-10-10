@@ -204,9 +204,9 @@ export function AdminPlans() {
                       type="button"
                       onClick={() => handleOpenModal(p)}
                       style={{
-                        backgroundColor: '#1b1f2b',
+                        backgroundColor: '#18181a',
                         color: '#d1d5db',
-                        border: '1px solid #2d3345',
+                        border: '1px solid #232325',
                         borderRadius: '8px',
                         padding: '4px 14px',
                         fontSize: '12px',
@@ -329,7 +329,7 @@ export function AdminPlans() {
 
             <form onSubmit={handleSavePlan} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
                   Plan Name *
                 </label>
                 <input
@@ -338,13 +338,13 @@ export function AdminPlans() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Starter, Growth, Scale"
-                  style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+                  style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
                   required
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
                   Monthly Email Limit *
                 </label>
                 <input
@@ -353,13 +353,13 @@ export function AdminPlans() {
                   value={monthlyLimit}
                   onChange={(e) => setMonthlyLimit(e.target.value)}
                   min="1"
-                  style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+                  style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
                   required
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
                   Daily Safety Limit *
                 </label>
                 <input
@@ -368,13 +368,13 @@ export function AdminPlans() {
                   value={dailyLimit}
                   onChange={(e) => setDailyLimit(e.target.value)}
                   min="1"
-                  style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+                  style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
                   required
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #8c93a7)', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
                   Rate Limit (req/sec) *
                 </label>
                 <input
@@ -384,7 +384,7 @@ export function AdminPlans() {
                   onChange={(e) => setRateLimit(e.target.value)}
                   min="1"
                   max="10000"
-                  style={{ backgroundColor: '#0b0d13', color: '#ffffff', border: '1px solid #232836' }}
+                  style={{ backgroundColor: '#0f0f11', color: 'var(--text-main, #ececec)', border: '1px solid var(--border-input, #232325)' }}
                   required
                 />
               </div>

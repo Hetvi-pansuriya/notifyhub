@@ -35,12 +35,12 @@ export function EmptyState({
           width: '48px',
           height: '48px',
           borderRadius: '12px',
-          backgroundColor: '#181b24',
-          border: '1px solid #232836',
+          backgroundColor: 'var(--bg-surface-elevated, #18181a)',
+          border: '1px solid var(--border-subtle, #232325)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'var(--text-secondary, #8c93a7)',
+          color: 'var(--text-secondary, #9a9a9f)',
           marginBottom: '16px',
         }}
       >

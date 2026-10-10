@@ -124,8 +124,8 @@ export function AdminClients({ onSelectClient }) {
               style={{
                 width: '100%',
                 padding: '7px 14px',
-                backgroundColor: '#161922',
-                border: '1px solid var(--border-subtle, #1f232f)',
+                backgroundColor: '#0f0f11',
+                border: '1px solid var(--border-input, #232325)',
                 borderRadius: 'var(--radius-full, 9999px)',
                 color: '#ffffff',
                 fontSize: '12.5px',
@@ -190,7 +190,7 @@ export function AdminClients({ onSelectClient }) {
                           </span>
                           <span style={{ color: 'var(--text-muted, #585f73)' }}>{pct}%</span>
                         </div>
-                        <div style={{ width: '100%', height: '5px', backgroundColor: '#1b1e2a', borderRadius: '9999px', overflow: 'hidden' }}>
+                        <div style={{ width: '100%', height: '5px', backgroundColor: '#1f1f23', borderRadius: '9999px', overflow: 'hidden' }}>
                           <div
                             style={{
                               width: `${pct}%`,

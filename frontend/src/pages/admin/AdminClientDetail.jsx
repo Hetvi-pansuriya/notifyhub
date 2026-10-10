@@ -210,11 +210,11 @@ export function AdminClientDetail({ clientId, client: initialClient, onBack }) {
             title="Click to copy client ID"
             style={{
               padding: '4px 10px',
-              backgroundColor: '#161922',
-              border: '1px solid #202431',
+              backgroundColor: 'var(--bg-surface-elevated, #18181a)',
+              border: '1px solid var(--border-subtle, #232325)',
               borderRadius: '9999px',
               fontSize: '11.5px',
-              color: '#8c93a7',
+              color: 'var(--text-secondary, #9a9a9f)',
               fontFamily: 'monospace',
               cursor: 'pointer',
               display: 'flex',
@@ -303,7 +303,7 @@ export function AdminClientDetail({ clientId, client: initialClient, onBack }) {
                   / {monthlyLimit.toLocaleString()} ({monthlyPct}%)
                 </span>
               </div>
-              <div style={{ width: '100%', height: '6px', backgroundColor: '#1b1e2a', borderRadius: '9999px', overflow: 'hidden', marginTop: '12px' }}>
+              <div style={{ width: '100%', height: '6px', backgroundColor: '#1f1f23', borderRadius: '9999px', overflow: 'hidden', marginTop: '12px' }}>
                 <div
                   style={{
                     width: `${monthlyPct}%`,
@@ -386,8 +386,8 @@ export function AdminClientDetail({ clientId, client: initialClient, onBack }) {
                     style={{
                       flex: 1,
                       padding: '8px 12px',
-                      backgroundColor: '#161922',
-                      border: '1px solid #202431',
+                      backgroundColor: '#0f0f11',
+                      border: '1px solid var(--border-input, #232325)',
                       borderRadius: '8px',
                       color: '#ffffff',
                       fontSize: '13px',
@@ -595,8 +595,8 @@ export function AdminClientDetail({ clientId, client: initialClient, onBack }) {
         >
           <div
             style={{
-              backgroundColor: '#12141a',
-              border: '1px solid #1f232f',
+              backgroundColor: 'var(--bg-surface-card, #141415)',
+              border: '1px solid var(--border-subtle, #232325)',
               borderRadius: '16px',
               width: '100%',
               maxWidth: '520px',
@@ -645,8 +645,8 @@ export function AdminClientDetail({ clientId, client: initialClient, onBack }) {
                 <div style={{ position: 'relative', marginBottom: '20px' }}>
                   <div
                     style={{
-                      backgroundColor: '#161922',
-                      border: '1px solid #202431',
+                      backgroundColor: '#0b0b0c',
+                      border: '1px solid var(--border-subtle, #232325)',
                       borderRadius: '8px',
                       padding: '12px',
                       fontSize: '12.5px',

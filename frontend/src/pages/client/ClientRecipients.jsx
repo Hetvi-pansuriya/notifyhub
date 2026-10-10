@@ -179,8 +179,8 @@ export function ClientRecipients() {
             style={{
               width: '100%',
               padding: '7px 14px',
-              backgroundColor: '#161922',
-              border: '1px solid var(--border-subtle, #1f232f)',
+              backgroundColor: '#0f0f11',
+              border: '1px solid var(--border-input, #232325)',
               borderRadius: 'var(--radius-full, 9999px)',
               color: '#ffffff',
               fontSize: '12.5px',
@@ -338,8 +338,8 @@ export function ClientRecipients() {
         >
           <div
             style={{
-              backgroundColor: '#12141a',
-              border: '1px solid #1f232f',
+              backgroundColor: 'var(--bg-surface-card, #141415)',
+              border: '1px solid var(--border-subtle, #232325)',
               borderRadius: '16px',
               width: '100%',
               maxWidth: '480px',
@@ -349,7 +349,7 @@ export function ClientRecipients() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+              <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-main, #ececec)', margin: 0 }}>
                 {editingItem ? 'Edit Recipient' : 'Add Recipient'}
               </h2>
               <button
@@ -357,7 +357,7 @@ export function ClientRecipients() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#8c93a7',
+                  color: 'var(--text-secondary, #9a9a9f)',
                   fontSize: '20px',
                   cursor: 'pointer',
                   lineHeight: 1,
@@ -382,8 +382,8 @@ export function ClientRecipients() {
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    backgroundColor: editingItem ? '#0c0d12' : '#161922',
-                    border: '1px solid #202431',
+                    backgroundColor: editingItem ? '#0b0b0c' : '#0f0f11',
+                    border: '1px solid var(--border-input, #232325)',
                     borderRadius: '8px',
                     color: '#ffffff',
                     fontSize: '13px',
@@ -406,8 +406,8 @@ export function ClientRecipients() {
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    backgroundColor: '#161922',
-                    border: '1px solid #202431',
+                    backgroundColor: '#0f0f11',
+                    border: '1px solid var(--border-input, #232325)',
                     borderRadius: '8px',
                     color: '#ffffff',
                     fontSize: '13px',
@@ -428,8 +428,8 @@ export function ClientRecipients() {
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    backgroundColor: '#161922',
-                    border: '1px solid #202431',
+                    backgroundColor: '#0f0f11',
+                    border: '1px solid var(--border-input, #232325)',
                     borderRadius: '8px',
                     color: '#ffffff',
                     fontSize: '13px',
@@ -495,8 +495,8 @@ export function ClientRecipients() {
         >
           <div
             style={{
-              backgroundColor: '#12141a',
-              border: '1px solid #1f232f',
+              backgroundColor: 'var(--bg-surface-card, #141415)',
+              border: '1px solid var(--border-subtle, #232325)',
               borderRadius: '16px',
               width: '100%',
               maxWidth: '520px',
@@ -507,10 +507,10 @@ export function ClientRecipients() {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
-                <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-main, #ececec)', margin: 0 }}>
                   Opt-out Preferences
                 </h2>
-                <div style={{ fontSize: '12px', color: '#8c93a7', marginTop: '2px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary, #9a9a9f)', marginTop: '2px' }}>
                   {prefRecipient.email} ({prefRecipient.external_id})
                 </div>
               </div>
@@ -519,7 +519,7 @@ export function ClientRecipients() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#8c93a7',
+                  color: 'var(--text-secondary, #9a9a9f)',
                   fontSize: '20px',
                   cursor: 'pointer',
                   lineHeight: 1,
@@ -529,12 +529,12 @@ export function ClientRecipients() {
               </button>
             </div>
 
-            <p style={{ fontSize: '13px', color: 'var(--text-muted, #585f73)', lineHeight: 1.5, marginBottom: '20px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted, #71717a)', lineHeight: 1.5, marginBottom: '20px' }}>
               Toggle event types this recipient wishes to unsubscribe from. Deliveries configured with &quot;Respect Opt-outs&quot; will be skipped automatically for this recipient.
             </p>
 
             {eventTypes.length === 0 ? (
-              <div style={{ color: '#8c93a7', fontSize: '13px', textAlign: 'center', padding: '20px' }}>
+              <div style={{ color: 'var(--text-secondary, #9a9a9f)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>
                 No event types configured yet.
               </div>
             ) : (
@@ -549,9 +549,9 @@ export function ClientRecipients() {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         padding: '10px 14px',
-                        backgroundColor: '#161922',
+                        backgroundColor: 'var(--bg-surface-elevated, #18181a)',
                         borderRadius: '8px',
-                        border: '1px solid #202431',
+                        border: '1px solid var(--border-subtle, #232325)',
                       }}
                     >
                       <div>

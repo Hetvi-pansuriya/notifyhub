@@ -83,7 +83,7 @@
 
 .nav-item.active {
   color: #ffffff;
-  background-color: #171a23;
+  background-color: #1c1c1f;
   font-weight: 600;
 }
 
@@ -157,7 +157,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
-  background-color: rgba(10, 11, 14, 0.8);
+  background-color: rgba(11, 11, 12, 0.92);
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
@@ -185,8 +185,8 @@
 }
 
 .search-input:focus {
-  border-color: #384055;
-  background-color: #151821;
+  border-color: #3b82f6;
+  background-color: #141416;
 }
 
 .topbar-actions {
@@ -212,7 +212,7 @@
 }
 
 .console-switch-btn {
-  background-color: #171a24;
+  background-color: #18181a;
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: 12px;
@@ -223,7 +223,7 @@
 }
 
 .console-switch-btn:hover {
-  background-color: #212534;
+  background-color: #202024;
   color: var(--text-main);
 }
 
@@ -382,7 +382,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(6, 7, 10, 0.75);
+  background-color: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -392,8 +392,8 @@
 }
 
 .modal-card {
-  background-color: #13151c;
-  border: 1px solid #232734;
+  background-color: #141415;
+  border: 1px solid #232325;
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 560px;
@@ -442,7 +442,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  background-color: #111319;
+  background-color: #111113;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 

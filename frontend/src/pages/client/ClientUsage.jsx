@@ -194,7 +194,7 @@ export function ClientUsage({ clientId = null, onNavigateToPlans }) {
               style={{
                 width: '100%',
                 height: '8px',
-                backgroundColor: '#1b1e2a',
+                backgroundColor: '#1f1f23',
                 borderRadius: '9999px',
                 overflow: 'hidden',
               }}

@@ -139,21 +139,21 @@ export function ClientProfile() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-          <div style={{ padding: '14px 16px', backgroundColor: '#161922', borderRadius: '10px', border: '1px solid #202431' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)' }}>Owner Email</div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', marginTop: '4px' }}>{ownerEmail}</div>
+          <div style={{ padding: '14px 16px', backgroundColor: 'var(--bg-surface-elevated, #18181a)', borderRadius: '10px', border: '1px solid var(--border-subtle, #232325)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)' }}>Owner Email</div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main, #ececec)', marginTop: '4px' }}>{ownerEmail}</div>
           </div>
-          <div style={{ padding: '14px 16px', backgroundColor: '#161922', borderRadius: '10px', border: '1px solid #202431' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)' }}>Account Role</div>
+          <div style={{ padding: '14px 16px', backgroundColor: 'var(--bg-surface-elevated, #18181a)', borderRadius: '10px', border: '1px solid var(--border-subtle, #232325)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)' }}>Account Role</div>
             <div style={{ fontSize: '14px', fontWeight: 600, color: '#4ade80', marginTop: '4px' }}>Organization Owner</div>
           </div>
-          <div style={{ padding: '14px 16px', backgroundColor: '#161922', borderRadius: '10px', border: '1px solid #202431' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)' }}>Throughput Rate Limit</div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', marginTop: '4px' }}>{rateLimit} requests / sec</div>
+          <div style={{ padding: '14px 16px', backgroundColor: 'var(--bg-surface-elevated, #18181a)', borderRadius: '10px', border: '1px solid var(--border-subtle, #232325)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)' }}>Throughput Rate Limit</div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main, #ececec)', marginTop: '4px' }}>{rateLimit} requests / sec</div>
           </div>
-          <div style={{ padding: '14px 16px', backgroundColor: '#161922', borderRadius: '10px', border: '1px solid #202431' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted, #585f73)' }}>Member Status</div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', marginTop: '4px' }}>{memberSince}</div>
+          <div style={{ padding: '14px 16px', backgroundColor: 'var(--bg-surface-elevated, #18181a)', borderRadius: '10px', border: '1px solid var(--border-subtle, #232325)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #71717a)' }}>Member Status</div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main, #ececec)', marginTop: '4px' }}>{memberSince}</div>
           </div>
         </div>
       </div>
@@ -180,7 +180,7 @@ export function ClientProfile() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' }}>
             {/* Company Name */}
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#8c93a7', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
                 Company / Organization Name
               </label>
               <input
@@ -192,8 +192,8 @@ export function ClientProfile() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#161922',
-                  border: '1px solid var(--border-subtle, #1f232f)',
+                  backgroundColor: '#0f0f11',
+                  border: '1px solid var(--border-input, #232325)',
                   borderRadius: '8px',
                   color: '#ffffff',
                   fontSize: '13px',
@@ -204,7 +204,7 @@ export function ClientProfile() {
 
             {/* From Name */}
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#8c93a7', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
                 Sender Display Name (From Name)
               </label>
               <input
@@ -216,22 +216,22 @@ export function ClientProfile() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#161922',
-                  border: '1px solid var(--border-subtle, #1f232f)',
+                  backgroundColor: '#0f0f11',
+                  border: '1px solid var(--border-input, #232325)',
                   borderRadius: '8px',
                   color: '#ffffff',
                   fontSize: '13px',
                   outline: 'none',
                 }}
               />
-              <span style={{ fontSize: '11px', color: 'var(--text-muted, #585f73)', marginTop: '4px', display: 'block' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted, #71717a)', marginTop: '4px', display: 'block' }}>
                 Appears as "{fromName || companyName || 'Client'} via NotifyHub"
               </span>
             </div>
 
             {/* Reply-To Email */}
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#8c93a7', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary, #9a9a9f)', marginBottom: '6px' }}>
                 Reply-To Email Address
               </label>
               <input
@@ -242,15 +242,15 @@ export function ClientProfile() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#161922',
-                  border: '1px solid var(--border-subtle, #1f232f)',
+                  backgroundColor: '#0f0f11',
+                  border: '1px solid var(--border-input, #232325)',
                   borderRadius: '8px',
                   color: '#ffffff',
                   fontSize: '13px',
                   outline: 'none',
                 }}
               />
-              <span style={{ fontSize: '11px', color: 'var(--text-muted, #585f73)', marginTop: '4px', display: 'block' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted, #71717a)', marginTop: '4px', display: 'block' }}>
                 Where customer replies will be directed
               </span>
             </div>
@@ -260,15 +260,15 @@ export function ClientProfile() {
           <div
             style={{
               padding: '14px 18px',
-              backgroundColor: '#161922',
+              backgroundColor: 'var(--bg-surface-elevated, #18181a)',
               borderRadius: '10px',
-              border: '1px solid #202431',
+              border: '1px solid var(--border-subtle, #232325)',
               display: 'flex',
               flexDirection: 'column',
               gap: '6px',
             }}
           >
-            <div style={{ fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, #585f73)' }}>
+            <div style={{ fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, #71717a)' }}>
               Live Email Header Preview
             </div>
             <div style={{ fontSize: '13px', color: '#f1f3f9', fontFamily: 'monospace' }}>
