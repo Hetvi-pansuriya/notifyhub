@@ -46,8 +46,7 @@ def seed_admin() -> None:
         else:
             user.password_hash = password_hash
             user.role = "admin"
-        # Seed 3 standard platform plans if missing
-        # Seed 3 standard platform plans: Starter, Growth, Scale
+        # Seed standard platform plans: Starter, Growth, Scale
         from app.models import Plan
         plans_data = [
             ("Starter", "Free tier for development and early stage apps", 10000, 30, 50),

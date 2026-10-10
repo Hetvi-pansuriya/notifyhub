@@ -1,4 +1,4 @@
-"""All eight database models for NotifyHub adhering strictly to multi-tenant rules."""
+"""Database models for NotifyHub multi-tenant transactional notification service."""
 
 import uuid
 from datetime import datetime

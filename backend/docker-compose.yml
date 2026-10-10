@@ -56,7 +56,6 @@ services:
       - ./app:/app/app
       - ./alembic:/app/alembic
       - ./worker:/app/worker
-      - ./tests:/app/tests
       - ./scripts:/app/scripts
     depends_on:
       postgres:

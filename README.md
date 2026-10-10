@@ -1,6 +1,6 @@
 # NotifyHub
 
-NotifyHub is a generic, multi-tenant transactional email notification service. It provides durable event ingestion, rate-limited queuing with zero message loss, pluggable email delivery (MailHog SMTP for local development, SendGrid for production), self-service client API keys, and dedicated management consoles for both tenants and platform administrators.
+NotifyHub is a generic, multi-tenant transactional email notification service. It provides durable event ingestion, rate-limited queuing with zero message loss, pluggable email delivery (SendGrid for live production, SMTP fallback), self-service client API keys, and dedicated management consoles for both tenants and platform administrators.
 
 ---
 
@@ -9,7 +9,7 @@ NotifyHub is a generic, multi-tenant transactional email notification service. I
 - **FastAPI API Gateway:** High-performance REST API handling event ingestion, session authentication, client console endpoints, and platform administration.
 - **PostgreSQL 16:** Durable persistence and brokerless message queueing using `SELECT ... FOR UPDATE SKIP LOCKED` for concurrent workers.
 - **Background Worker:** Autonomous delivery engine with exponential backoff retries, dead-letter tracking, rate throttling, and an abandoned-lease reaper.
-- **Pluggable Mail Providers:** Local SMTP capture via MailHog during development, switching cleanly to Twilio SendGrid for production delivery.
+- **Pluggable Mail Delivery:** Production delivery via Twilio SendGrid with configurable daily limits and rate control, with SMTP fallback.
 - **React Management Console:** Zero-dependency frontend built with React, Vite, and plain CSS, offering isolated portals for client tenants and platform administrators.
 
 ---
@@ -28,12 +28,11 @@ docker compose up -d
 This starts:
 - **API Server:** `http://localhost:8000` (FastAPI with live reload)
 - **Database:** `localhost:5433` (PostgreSQL 16)
-- **Local Mailbox (MailHog):** `http://localhost:8025` (SMTP on `localhost:1025`)
 - **Queue Worker:** Autonomous background delivery processor
 
 ### 2. Seed Initial Admin Account
 
-Create the platform administrator user:
+Create the platform administrator user and default tiers:
 
 ```bash
 docker compose exec api python scripts/seed.py
@@ -57,17 +56,9 @@ Open **`http://localhost:3000`** in your browser. The Vite development server au
 
 ---
 
-## Email Delivery: Local Development vs. Production
+## Email Delivery (SendGrid)
 
-NotifyHub uses MailHog by default for completely isolated local testing, preventing accidental external emails.
-
-### Local Development (Default: MailHog)
-- **Provider:** `MAIL_PROVIDER=smtp`
-- **Outgoing Port:** Port `1025`
-- **Web Inbox:** Open [http://localhost:8025](http://localhost:8025) to view captured emails in real time.
-
-### Production (SendGrid)
-To enable real email dispatch, set the following environment variables in `backend/.env`:
+NotifyHub is configured for production email dispatch using Twilio SendGrid:
 
 ```env
 MAIL_PROVIDER=sendgrid
