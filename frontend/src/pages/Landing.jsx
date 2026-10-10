@@ -464,10 +464,10 @@ func main() {
       {/* Plans Section */}
       <section id="plans" className="landing-plans-section landing-container">
         <div className="landing-section-header">
-          <span className="landing-section-tag">Platform Tiers</span>
-          <h2 className="landing-section-title">Transparent developer plans</h2>
+          <span className="landing-section-tag">Pricing</span>
+          <h2 className="landing-section-title">The subscription plans NotifyHub offers</h2>
           <p className="landing-section-desc">
-            Standard platform tiers configured with dedicated daily throughput ceilings and rate limits.
+            Transparent developer plans tailored to your application's email volume and throughput requirements.
           </p>
         </div>
 
@@ -476,36 +476,28 @@ func main() {
           <div className="landing-plan-card">
             <h3 className="landing-plan-name">Starter</h3>
             <p className="landing-plan-desc">Free tier for development and early stage apps</p>
-            
-            <div className="landing-plan-quota">
-              <div className="landing-plan-quota-val">10,000 / mo</div>
-              <div className="landing-plan-quota-sub">30 emails/day cap • 50 req/sec</div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <span style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono, monospace)', letterSpacing: '-0.02em' }}>
+                ₹0
+              </span>
+              <span style={{ fontSize: '13px', color: 'var(--color-muted, #9a9a9f)', marginLeft: '6px' }}>
+                /month
+              </span>
             </div>
 
             <ul className="landing-plan-features">
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>10,000</strong> emails monthly limit</span>
+                <span>10,000 emails a month</span>
               </li>
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>30</strong> emails / day safety ceiling</span>
+                <span>50 requests per second</span>
               </li>
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>50</strong> requests per second burst</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>Durable PostgreSQL queue (`SKIP LOCKED`)</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>Jinja2 template compilation</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>Up to 3 active API keys</span>
+                <span>Unlimited templates</span>
               </li>
             </ul>
 
@@ -520,35 +512,27 @@ func main() {
             <h3 className="landing-plan-name">Growth</h3>
             <p className="landing-plan-desc">Growing businesses requiring higher daily sending throughput</p>
 
-            <div className="landing-plan-quota">
-              <div className="landing-plan-quota-val">50,000 / mo</div>
-              <div className="landing-plan-quota-sub">100 emails/day cap • 100 req/sec</div>
+            <div style={{ marginBottom: '24px' }}>
+              <span style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono, monospace)', letterSpacing: '-0.02em' }}>
+                ₹2,499
+              </span>
+              <span style={{ fontSize: '13px', color: 'var(--color-muted, #9a9a9f)', marginLeft: '6px' }}>
+                /month
+              </span>
             </div>
 
             <ul className="landing-plan-features">
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>50,000</strong> emails monthly limit</span>
+                <span>50,000 emails a month</span>
               </li>
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>100</strong> emails / day safety ceiling</span>
+                <span>100 requests per second</span>
               </li>
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>100</strong> requests per second burst</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>PDF attachment pipeline (up to 5 MB)</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>Up to 5 active API keys</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>Priority worker queue dispatch</span>
+                <span>Unlimited templates</span>
               </li>
             </ul>
 
@@ -562,39 +546,31 @@ func main() {
             <h3 className="landing-plan-name">Scale</h3>
             <p className="landing-plan-desc">Large scale transactional email volume with dedicated rate ceilings</p>
 
-            <div className="landing-plan-quota">
-              <div className="landing-plan-quota-val">250,000 / mo</div>
-              <div className="landing-plan-quota-sub">500 emails/day cap • 200 req/sec</div>
+            <div style={{ marginBottom: '24px' }}>
+              <span style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono, monospace)', letterSpacing: '-0.02em' }}>
+                ₹9,999
+              </span>
+              <span style={{ fontSize: '13px', color: 'var(--color-muted, #9a9a9f)', marginLeft: '6px' }}>
+                /month
+              </span>
             </div>
 
             <ul className="landing-plan-features">
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>250,000</strong> emails monthly limit</span>
+                <span>250,000 emails a month</span>
               </li>
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>500</strong> emails / day safety ceiling</span>
+                <span>200 requests per second</span>
               </li>
               <li className="landing-plan-feature-item">
                 <span className="landing-plan-feature-check">✓</span>
-                <span><strong>200</strong> requests per second burst</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>High throughput dedicated queues</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>Unlimited active API keys</span>
-              </li>
-              <li className="landing-plan-feature-item">
-                <span className="landing-plan-feature-check">✓</span>
-                <span>Custom transport routing &amp; SLA</span>
+                <span>Unlimited templates</span>
               </li>
             </ul>
 
-            <button onClick={handleGetStarted} className="btn-plan-select">
+            <button onClick={handleGetStarted} className="btn-plan-select primary">
               Get Started
             </button>
           </div>
