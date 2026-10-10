@@ -54,12 +54,12 @@ export function AuthProvider({ children }) {
     const isRoot = path === '/'
 
     if (authState.status === 'anonymous') {
-      if (isAppPath || isAdminPath || isRoot) {
+      if (isAppPath || isAdminPath) {
         navigate('/login', true)
       }
     } else if (authState.status === 'authenticated') {
       const { user } = authState
-      if (isAuthPath || isRoot) {
+      if (isAuthPath) {
         if (user.role === 'admin') {
           navigate('/admin/overview', true)
         } else {

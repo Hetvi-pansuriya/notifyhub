@@ -3,7 +3,8 @@ import { useAuth } from './auth'
 import { useRoute, matchRoute } from './router'
 import { Layout } from './components/Layout'
 
-// Auth Pages
+// Public Pages
+import { Landing } from './pages/Landing'
 import { Login } from './pages/Login'
 import { Signup } from './pages/Signup'
 import { NotFound } from './pages/NotFound'
@@ -57,7 +58,10 @@ export function App() {
     )
   }
 
-  // Public Auth Pages
+  // Public Pages
+  if (path === '/' || path === '') {
+    return <Landing />
+  }
   if (path === '/login') {
     return <Login />
   }
