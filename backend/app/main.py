@@ -89,6 +89,17 @@ app.include_router(templates.router)
 app.include_router(event_types.router)
 
 
+@app.get("/", tags=["Root"])
+def root():
+    """Root endpoint confirming service status and links to documentation."""
+    return {
+        "service": "NotifyHub API",
+        "status": "online",
+        "docs": "/docs",
+        "health": "/api/health",
+    }
+
+
 @app.get("/api/me", tags=["Client"])
 def get_me(client = Depends(get_current_client)):
     """Returns the authenticated client's tenant profile."""
