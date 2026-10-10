@@ -4,7 +4,7 @@
 
 Multi-tenant transactional email notification service with template rendering, durable PostgreSQL queueing, and dedicated web consoles.
 
-Live app: https://notifyhub-umber-one.vercel.app/ 
+Live app: https://notifyhub-umber-one.vercel.app/       
 Backend API: https://notifyhub-94r2.onrender.com/  
 API docs: https://notifyhub-94r2.onrender.com/docs  
 
