@@ -4,9 +4,9 @@
 
 Multi-tenant transactional email notification service with template rendering, durable PostgreSQL queueing, and dedicated web consoles.
 
-Live app: <NOTIFYHUB_VERCEL_URL>  
-Backend API: <NOTIFYHUB_RENDER_URL>  
-API docs: <NOTIFYHUB_RENDER_URL>/docs  
+Live app: https://notifyhub-umber-one.vercel.app/ 
+Backend API: https://notifyhub-94r2.onrender.com/  
+API docs: https://notifyhub-94r2.onrender.com/docs  
 
 - Ingests notification events over a REST API with idempotency and rate limiting.
 - Renders Jinja2 templates strictly with variable validation and version tracking.
