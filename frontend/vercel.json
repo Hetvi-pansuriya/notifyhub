@@ -3,15 +3,15 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://api.notifyhub.example.com/api/:path*"
+      "destination": "https://notifyhub-94r2.onrender.com/api/:path*"
     },
     {
       "source": "/console/:path*",
-      "destination": "https://api.notifyhub.example.com/console/:path*"
+      "destination": "https://notifyhub-94r2.onrender.com/console/:path*"
     },
     {
       "source": "/admin/:path*",
-      "destination": "https://api.notifyhub.example.com/admin/:path*"
+      "destination": "https://notifyhub-94r2.onrender.com/admin/:path*"
     },
     {
       "source": "/:path*",
